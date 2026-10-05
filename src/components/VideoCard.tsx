@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CheckCircle, Heart, Link, PlayCircleIcon } from 'lucide-react';
+import { CheckCircle, Film, Heart, Link, PlayCircleIcon } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -58,6 +58,7 @@ export default function VideoCard({
   const router = useRouter();
   const [favorited, setFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const isAggregate = from === 'search' && !!items?.length;
 
@@ -275,16 +276,33 @@ export default function VideoCard({
       {/* 海报容器 */}
       <div className='relative aspect-[2/3] overflow-hidden rounded-lg'>
         {/* 骨架屏 */}
-        {!isLoading && <ImagePlaceholder aspectRatio='aspect-[2/3]' />}
-        {/* 图片 */}
-        <Image
-          src={processImageUrl(actualPoster)}
-          alt={actualTitle}
-          fill
-          className='object-cover'
-          referrerPolicy='no-referrer'
-          onLoadingComplete={() => setIsLoading(true)}
-        />
+        {!isLoading && !imgError && (
+          <ImagePlaceholder aspectRatio='aspect-[2/3]' />
+        )}
+
+        {/* 异常或无海报时的备用占位 */}
+        {imgError || !actualPoster ? (
+          <div className='absolute inset-0 bg-gray-200 dark:bg-gray-800 flex flex-col items-center justify-center p-3 text-center'>
+            <Film className='w-10 h-10 text-gray-400 dark:text-gray-600 mb-2' />
+            <span className='text-xs text-gray-500 dark:text-gray-400 line-clamp-2'>
+              {actualTitle}
+            </span>
+          </div>
+        ) : (
+          /* 图片 */
+          <Image
+            src={processImageUrl(actualPoster)}
+            alt={actualTitle}
+            fill
+            className='object-cover'
+            referrerPolicy='no-referrer'
+            onLoadingComplete={() => setIsLoading(true)}
+            onError={() => {
+              setImgError(true);
+              setIsLoading(true);
+            }}
+          />
+        )}
 
         {/* 悬浮遮罩 */}
         <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-100' />

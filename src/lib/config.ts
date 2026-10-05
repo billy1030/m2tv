@@ -199,7 +199,8 @@ async function initConfig() {
             SearchDownstreamMaxPage:
               Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
             SiteInterfaceCacheTime: fileConfig.cache_time || 7200,
-            ImageProxy: process.env.NEXT_PUBLIC_IMAGE_PROXY || '',
+            ImageProxy:
+              process.env.NEXT_PUBLIC_IMAGE_PROXY || '/api/image-proxy?url=',
             DoubanProxy: process.env.NEXT_PUBLIC_DOUBAN_PROXY || '',
             DisableYellowFilter:
               process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
@@ -436,7 +437,8 @@ export async function resetConfig() {
       SearchDownstreamMaxPage:
         Number(process.env.NEXT_PUBLIC_SEARCH_MAX_PAGE) || 5,
       SiteInterfaceCacheTime: fileConfig.cache_time || 7200,
-      ImageProxy: process.env.NEXT_PUBLIC_IMAGE_PROXY || '',
+      ImageProxy:
+        process.env.NEXT_PUBLIC_IMAGE_PROXY || '/api/image-proxy?url=',
       DoubanProxy: process.env.NEXT_PUBLIC_DOUBAN_PROXY || '',
       DisableYellowFilter:
         process.env.NEXT_PUBLIC_DISABLE_YELLOW_FILTER === 'true',
