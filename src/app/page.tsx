@@ -13,7 +13,7 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanCategories } from '@/lib/douban.client';
+import { getDoubanCategories } from '@/lib/db.media.client';
 import { DoubanItem } from '@/lib/types';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -220,7 +220,7 @@ function HomeClient() {
                     热门电影
                   </h2>
                   <Link
-                    href='/douban?type=movie'
+                    href='/db?type=movie'
                     className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多
@@ -268,7 +268,7 @@ function HomeClient() {
                     热门剧集
                   </h2>
                   <Link
-                    href='/douban?type=tv'
+                    href='/db?type=tv'
                     className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多
@@ -315,7 +315,7 @@ function HomeClient() {
                     热门综艺
                   </h2>
                   <Link
-                    href='/douban?type=show'
+                    href='/db?type=show'
                     className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多

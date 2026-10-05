@@ -6,12 +6,12 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { getDoubanCategories, getDoubanList } from '@/lib/douban.client';
+import { getDoubanCategories, getDoubanList } from '@/lib/db.media.client';
 import { DoubanItem, DoubanResult } from '@/lib/types';
 
-import DoubanCardSkeleton from '@/components/DoubanCardSkeleton';
-import DoubanCustomSelector from '@/components/DoubanCustomSelector';
-import DoubanSelector from '@/components/DoubanSelector';
+import DoubanCardSkeleton from '@/components/DbCardSkeleton';
+import DoubanCustomSelector from '@/components/DbCustomSelector';
+import DoubanSelector from '@/components/DbSelector';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
@@ -370,7 +370,7 @@ function DoubanPageClient() {
     if (type) params.set('type', type);
 
     const queryString = params.toString();
-    const activePath = `/douban${queryString ? `?${queryString}` : ''}`;
+    const activePath = `/db${queryString ? `?${queryString}` : ''}`;
     return activePath;
   };
 
@@ -385,7 +385,7 @@ function DoubanPageClient() {
               {getPageTitle()}
             </h1>
             <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400'>
-              来自豆瓣的精选内容
+              精选推荐内容
             </p>
           </div>
 

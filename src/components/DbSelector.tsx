@@ -43,7 +43,7 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
   const moviePrimaryOptions: SelectorOption[] = [
     { label: '热门电影', value: '热门' },
     { label: '最新电影', value: '最新' },
-    { label: '豆瓣高分', value: '豆瓣高分' },
+    { label: '高分精选', value: '豆瓣高分' },
     { label: '冷门佳片', value: '冷门佳片' },
   ];
 

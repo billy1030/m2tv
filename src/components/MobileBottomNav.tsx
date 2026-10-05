@@ -26,17 +26,17 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     {
       icon: Film,
       label: '电影',
-      href: '/douban?type=movie',
+      href: '/db?type=movie',
     },
     {
       icon: Tv,
       label: '剧集',
-      href: '/douban?type=tv',
+      href: '/db?type=tv',
     },
     {
       icon: Clover,
       label: '综艺',
-      href: '/douban?type=show',
+      href: '/db?type=show',
     },
   ]);
 
@@ -48,7 +48,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
         {
           icon: Star,
           label: '自定义',
-          href: '/douban?type=custom',
+          href: '/db?type=custom',
         },
       ]);
     }
@@ -63,7 +63,7 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
 
     return (
       decodedActive === decodedItemHref ||
-      (decodedActive.startsWith('/douban') &&
+      (decodedActive.startsWith('/db') &&
         decodedActive.includes(`type=${typeMatch}`))
     );
   };

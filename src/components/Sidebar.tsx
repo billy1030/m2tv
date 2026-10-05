@@ -2,7 +2,16 @@
 
 'use client';
 
-import { Clover, Film, Home, Menu, Search, Star, Tv } from 'lucide-react';
+import {
+  Clover,
+  Film,
+  HardDriveUpload,
+  Home,
+  Menu,
+  Search,
+  Star,
+  Tv,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -128,17 +137,17 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     {
       icon: Film,
       label: '电影',
-      href: '/douban?type=movie',
+      href: '/db?type=movie',
     },
     {
       icon: Tv,
       label: '剧集',
-      href: '/douban?type=tv',
+      href: '/db?type=tv',
     },
     {
       icon: Clover,
       label: '综艺',
-      href: '/douban?type=show',
+      href: '/db?type=show',
     },
   ]);
 
@@ -150,7 +159,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
         {
           icon: Star,
           label: '自定义',
-          href: '/douban?type=custom',
+          href: '/db?type=custom',
         },
       ]);
     }
@@ -247,7 +256,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
 
                   const isActive =
                     decodedActive === decodedItemHref ||
-                    (decodedActive.startsWith('/douban') &&
+                    (decodedActive.startsWith('/db') &&
                       decodedActive.includes(`type=${typeMatch}`));
                   const Icon = item.icon;
                   return (
@@ -271,6 +280,28 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                     </Link>
                   );
                 })}
+              </div>
+
+              {/* 配置向导入口 */}
+              <div className='pt-2 mt-2 border-t border-gray-200/50 dark:border-gray-700/50'>
+                <Link
+                  href='/setup'
+                  onClick={() => setActive('/setup')}
+                  data-active={active === '/setup'}
+                  title='配置向导 (Setup)'
+                  className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 min-h-[40px] dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
+                    isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
+                  } gap-3 justify-start`}
+                >
+                  <div className='w-4 h-4 flex items-center justify-center'>
+                    <HardDriveUpload className='h-4 w-4 text-green-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-green-400 dark:group-hover:text-green-300' />
+                  </div>
+                  {!isCollapsed && (
+                    <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
+                      配置向导
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>

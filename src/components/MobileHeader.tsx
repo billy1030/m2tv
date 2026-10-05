@@ -1,5 +1,6 @@
 'use client';
 
+import { HardDriveUpload } from 'lucide-react';
 import Link from 'next/link';
 
 import { BackButton } from './BackButton';
@@ -22,7 +23,15 @@ const MobileHeader = ({ showBackButton = false }: MobileHeaderProps) => {
         </div>
 
         {/* 右侧按钮 */}
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-1.5'>
+          <Link
+            href='/setup'
+            className='p-1.5 rounded-full text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400'
+            title='配置向导'
+            aria-label='Setup'
+          >
+            <HardDriveUpload className='w-5 h-5' />
+          </Link>
           <ThemeToggle />
           <UserMenu />
         </div>

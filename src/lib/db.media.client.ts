@@ -144,7 +144,7 @@ export async function getDoubanCategories(
     // 使用服务端 API（当没有设置代理 URL 时）
     const { kind, category, type, pageLimit = 20, pageStart = 0 } = params;
     const response = await fetch(
-      `/api/douban/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`
+      `/api/db/categories?kind=${kind}&category=${category}&type=${type}&limit=${pageLimit}&start=${pageStart}`
     );
 
     if (!response.ok) {
@@ -179,7 +179,7 @@ export async function getDoubanList(
     return fetchDoubanList(params);
   } else {
     const response = await fetch(
-      `/api/douban?tag=${tag}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}`
+      `/api/db?tag=${tag}&type=${type}&pageSize=${pageLimit}&pageStart=${pageStart}`
     );
 
     if (!response.ok) {

@@ -192,7 +192,7 @@ async function initConfig() {
         }
         adminConfig = {
           SiteConfig: {
-            SiteName: process.env.SITE_NAME || 'MoonTV',
+            SiteName: process.env.SITE_NAME || 'm2tv',
             Announcement:
               process.env.ANNOUNCEMENT ||
               '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
@@ -241,7 +241,7 @@ async function initConfig() {
     // 本地存储直接使用文件配置
     cachedConfig = {
       SiteConfig: {
-        SiteName: process.env.SITE_NAME || 'MoonTV',
+        SiteName: process.env.SITE_NAME || 'm2tv',
         Announcement:
           process.env.ANNOUNCEMENT ||
           '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
@@ -296,7 +296,7 @@ export async function getConfig(): Promise<AdminConfig> {
     }
 
     // 合并一些环境变量配置
-    adminConfig.SiteConfig.SiteName = process.env.SITE_NAME || 'MoonTV';
+    adminConfig.SiteConfig.SiteName = process.env.SITE_NAME || 'm2tv';
     adminConfig.SiteConfig.Announcement =
       process.env.ANNOUNCEMENT ||
       '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。';
@@ -430,7 +430,7 @@ export async function resetConfig() {
   }
   const adminConfig = {
     SiteConfig: {
-      SiteName: process.env.SITE_NAME || 'MoonTV',
+      SiteName: process.env.SITE_NAME || 'm2tv',
       Announcement:
         process.env.ANNOUNCEMENT ||
         '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。',
@@ -478,6 +478,72 @@ export async function resetConfig() {
   cachedConfig.UserConfig = adminConfig.UserConfig;
   cachedConfig.SourceConfig = adminConfig.SourceConfig;
   cachedConfig.CustomCategories = adminConfig.CustomCategories;
+}
+
+export async function updateDynamicConfig(
+  newConfig: Partial<AdminConfig>
+): Promise<AdminConfig> {
+  await initConfig();
+  if (!cachedConfig) {
+    await initConfig();
+  }
+  if (newConfig.SiteConfig) {
+    cachedConfig.SiteConfig = {
+      ...cachedConfig.SiteConfig,
+      ...newConfig.SiteConfig,
+    };
+  }
+  if (Array.isArray(newConfig.SourceConfig)) {
+    cachedConfig.SourceConfig = newConfig.SourceConfig;
+  }
+  if (Array.isArray(newConfig.CustomCategories)) {
+    cachedConfig.CustomCategories = newConfig.CustomCategories;
+  }
+  if (newConfig.UserConfig) {
+    cachedConfig.UserConfig = {
+      ...cachedConfig.UserConfig,
+      ...newConfig.UserConfig,
+    };
+  }
+
+  const storage = getStorage();
+  if (storage && typeof (storage as any).setAdminConfig === 'function') {
+    await (storage as any).setAdminConfig(cachedConfig);
+  }
+
+  // If in node environment (e.g. local dev / docker), also persist to config.json if possible
+  try {
+    if (typeof process !== 'undefined' && process.release?.name === 'node') {
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const _require = eval('require') as NodeRequire;
+      const fs = _require('fs') as typeof import('fs');
+      const path = _require('path') as typeof import('path');
+      const configPath = path.join(process.cwd(), 'config.json');
+      const apiSiteObj: Record<string, any> = {};
+      cachedConfig.SourceConfig.forEach((s) => {
+        apiSiteObj[s.key] = {
+          api: s.api,
+          name: s.name,
+          ...(s.detail ? { detail: s.detail } : {}),
+        };
+      });
+      const toSave = {
+        cache_time: cachedConfig.SiteConfig.SiteInterfaceCacheTime || 7200,
+        api_site: apiSiteObj,
+        custom_category: cachedConfig.CustomCategories.map((c) => ({
+          name: c.name,
+          type: c.type,
+          query: c.query,
+        })),
+      };
+      fs.writeFileSync(configPath, JSON.stringify(toSave, null, 2), 'utf-8');
+    }
+  } catch (err) {
+    // Non-critical, ignore if read-only filesystem
+    console.warn('Persist config.json skipped:', err);
+  }
+
+  return cachedConfig;
 }
 
 export async function getCacheTime(): Promise<number> {

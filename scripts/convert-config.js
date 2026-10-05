@@ -21,12 +21,20 @@ if (fs.existsSync(oldRuntimePath)) {
   console.log('旧的 runtime.ts 已删除');
 }
 
-// Read and parse config.json
+// Read and parse config.json (fallback to config.json.example if config.json is ignored/missing)
 let rawConfig;
+const fallbackConfigPath = path.join(projectRoot, 'config.json.example');
 try {
-  rawConfig = fs.readFileSync(configPath, 'utf8');
+  if (fs.existsSync(configPath)) {
+    rawConfig = fs.readFileSync(configPath, 'utf8');
+  } else if (fs.existsSync(fallbackConfigPath)) {
+    rawConfig = fs.readFileSync(fallbackConfigPath, 'utf8');
+    console.log('未找到 config.json，已使用 config.json.example 模板');
+  } else {
+    throw new Error('未找到 config.json 或 config.json.example');
+  }
 } catch (err) {
-  console.error(`无法读取 ${configPath}:`, err);
+  console.error(`无法读取配置文件:`, err);
   process.exit(1);
 }
 

@@ -2,7 +2,15 @@
 
 'use client';
 
-import { KeyRound, LogOut, Settings, Shield, User, X } from 'lucide-react';
+import {
+  HardDriveUpload,
+  KeyRound,
+  LogOut,
+  Settings,
+  Shield,
+  User,
+  X,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -363,6 +371,18 @@ export const UserMenu: React.FC = () => {
             <span className='font-medium'>设置</span>
           </button>
 
+          {/* 动态配置导入向导 (Setup) */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              router.push('/setup');
+            }}
+            className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
+          >
+            <HardDriveUpload className='w-4 h-4 text-green-500' />
+            <span className='font-medium'>配置导入向导</span>
+          </button>
+
           {/* 管理面板按钮 */}
           {showAdminPanel && (
             <button
@@ -516,14 +536,14 @@ export const UserMenu: React.FC = () => {
           {/* 分割线 */}
           <div className='border-t border-gray-200 dark:border-gray-700'></div>
 
-          {/* 豆瓣代理开关 */}
+          {/* 榜单代理开关 */}
           <div className='flex items-center justify-between'>
             <div>
               <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                启用豆瓣代理
+                启用精选榜单代理
               </h4>
               <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                启用后，豆瓣数据将通过代理服务器获取
+                启用后，榜单数据将通过代理服务器获取
               </p>
             </div>
             <label className='flex items-center cursor-pointer'>
@@ -540,14 +560,14 @@ export const UserMenu: React.FC = () => {
             </label>
           </div>
 
-          {/* 豆瓣代理地址设置 */}
+          {/* 榜单代理地址设置 */}
           <div className='space-y-3'>
             <div>
               <h4 className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                豆瓣代理地址
+                精选榜单代理地址
               </h4>
               <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                仅在启用豆瓣代理时生效，留空则使用服务器 API
+                仅在启用代理时生效，留空则使用服务器 API
               </p>
             </div>
             <input

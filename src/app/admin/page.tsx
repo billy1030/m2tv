@@ -24,13 +24,15 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   ChevronDown,
   ChevronUp,
+  Download,
   FolderOpen,
   Settings,
+  Upload,
   Users,
   Video,
 } from 'lucide-react';
 import { GripVertical } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { AdminConfig, AdminConfigResult } from '@/lib/admin.types';
@@ -1570,14 +1572,14 @@ const SiteConfigComponent = ({ config }: { config: AdminConfig | null }) => {
         </p>
       </div>
 
-      {/* 豆瓣代理设置 */}
+      {/* 精选榜单/元数据代理设置 */}
       <div>
         <label
           className={`block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 ${
             isD1Storage || isUpstashStorage ? 'opacity-50' : ''
           }`}
         >
-          豆瓣代理地址
+          精选榜单/元数据代理地址
           {isD1Storage && (
             <span className='ml-2 text-xs text-gray-500 dark:text-gray-400'>
               (D1 环境下请通过环境变量修改)
@@ -1740,6 +1742,60 @@ function AdminPageClient() {
     }));
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 导出配置为 JSON
+  const handleExportConfig = () => {
+    if (!config) return;
+    const jsonStr = JSON.stringify(config, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `moontv-config-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showSuccess('配置导出成功！');
+  };
+
+  // 导入/上传配置文件
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      let parsed: any;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        throw new Error('无效的 JSON 配置文件格式');
+      }
+
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `导入失败: ${res.status}`);
+      }
+
+      showSuccess('配置导入成功，已动态应用！');
+      await fetchConfig(true);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : '配置文件导入失败');
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // 新增: 重置配置处理函数
   const handleResetConfig = async () => {
     const { isConfirmed } = await Swal.fire({
@@ -1794,18 +1850,49 @@ function AdminPageClient() {
     <PageLayout activePath='/admin'>
       <div className='px-2 sm:px-10 py-4 sm:py-8'>
         <div className='max-w-[95%] mx-auto'>
-          {/* 标题 + 重置配置按钮 */}
-          <div className='flex items-center gap-2 mb-8'>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
-              管理员设置
-            </h1>
-            {config && role === 'owner' && (
-              <button
-                onClick={handleResetConfig}
-                className='px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors'
-              >
-                重置配置
-              </button>
+          {/* 标题 + 操作按钮 */}
+          <div className='flex flex-wrap items-center justify-between gap-3 mb-8'>
+            <div className='flex items-center gap-3'>
+              <h1 className='text-2xl font-bold text-gray-900 dark:text-gray-100'>
+                管理员设置
+              </h1>
+              {config && role === 'owner' && (
+                <button
+                  onClick={handleResetConfig}
+                  className='px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors'
+                >
+                  重置配置
+                </button>
+              )}
+            </div>
+
+            {/* 动态配置 导入 / 导出 */}
+            {config && (
+              <div className='flex items-center gap-2'>
+                <input
+                  type='file'
+                  ref={fileInputRef}
+                  accept='.json'
+                  className='hidden'
+                  onChange={handleImportFile}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className='flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm'
+                  title='导入 config.json 或完整配置'
+                >
+                  <Upload size={14} />
+                  导入配置
+                </button>
+                <button
+                  onClick={handleExportConfig}
+                  className='flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors shadow-sm'
+                  title='导出当前配置为 JSON'
+                >
+                  <Download size={14} />
+                  导出配置
+                </button>
+              </div>
             )}
           </div>
 

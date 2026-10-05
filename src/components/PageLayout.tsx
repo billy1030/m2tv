@@ -1,3 +1,6 @@
+import { HardDriveUpload } from 'lucide-react';
+import Link from 'next/link';
+
 import { BackButton } from './BackButton';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
@@ -34,6 +37,14 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
 
           {/* 桌面端顶部按钮 */}
           <div className='absolute top-2 right-4 z-20 hidden md:flex items-center gap-2'>
+            <Link
+              href='/setup'
+              className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
+              title='配置向导 (Setup)'
+              aria-label='Setup'
+            >
+              <HardDriveUpload className='w-5 h-5 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400' />
+            </Link>
             <ThemeToggle />
             <UserMenu />
           </div>
