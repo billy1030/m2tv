@@ -2,7 +2,8 @@
 
 'use client';
 
-const CURRENT_VERSION = '20261005230103';
+const CURRENT_VERSION = '20261005231642';
+const COMMIT_ID = 'd5942ad';
 
 // 版本检查结果枚举
 export enum UpdateStatus {
@@ -94,4 +95,4 @@ function compareVersions(remoteVersion: string): UpdateStatus {
 }
 
 // 导出当前版本号供其他地方使用
-export { CURRENT_VERSION };
+export { COMMIT_ID, CURRENT_VERSION };

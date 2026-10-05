@@ -23,15 +23,40 @@ function generateVersion() {
 // 生成版本号
 const currentVersion = generateVersion();
 
+// 获取当前 git commit id
+const { execSync } = require('child_process');
+let commitId = 'dev';
+try {
+  commitId = execSync('git rev-parse --short HEAD').toString().trim();
+} catch (e) {
+  // fallback if not a git repository
+}
+
 // 读取现有的 version.ts 文件
 const versionFilePath = path.join(__dirname, '..', 'src', 'lib', 'version.ts');
 let fileContent = fs.readFileSync(versionFilePath, 'utf8');
 
-// 使用正则表达式替换 CURRENT_VERSION 的值
-const updatedContent = fileContent.replace(
-  /const CURRENT_VERSION = '.*?'/,
-  `const CURRENT_VERSION = '${currentVersion}'`
+// 使用正则表达式替换 CURRENT_VERSION 和 COMMIT_ID 的值
+let updatedContent = fileContent.replace(
+  /const CURRENT_VERSION = '.*?';/,
+  `const CURRENT_VERSION = '${currentVersion}';`
 );
+
+if (updatedContent.includes('const COMMIT_ID =')) {
+  updatedContent = updatedContent.replace(
+    /const COMMIT_ID = '.*?';/,
+    `const COMMIT_ID = '${commitId}';`
+  );
+} else {
+  updatedContent = updatedContent.replace(
+    `const CURRENT_VERSION = '${currentVersion}';`,
+    `const CURRENT_VERSION = '${currentVersion}';\nconst COMMIT_ID = '${commitId}';`
+  );
+  updatedContent = updatedContent.replace(
+    'export { CURRENT_VERSION };',
+    'export { COMMIT_ID, CURRENT_VERSION };'
+  );
+}
 
 // 写入更新后的内容
 fs.writeFileSync(versionFilePath, updatedContent, 'utf8');
@@ -40,6 +65,6 @@ fs.writeFileSync(versionFilePath, updatedContent, 'utf8');
 const versionTxtPath = path.join(__dirname, '..', 'VERSION.txt');
 fs.writeFileSync(versionTxtPath, currentVersion, 'utf8');
 
-console.log(`版本号已更新为: ${currentVersion}`);
+console.log(`版本号已更新为: ${currentVersion} (Commit: ${commitId})`);
 console.log(`文件已更新: ${versionFilePath}`);
 console.log(`VERSION.txt 已更新: ${versionTxtPath}`);
