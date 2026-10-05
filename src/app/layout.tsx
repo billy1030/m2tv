@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: siteName,
-    description: '影视聚合',
+    description: 'Media Player Dashboard',
     manifest: '/manifest.json',
   };
 }
@@ -45,8 +45,7 @@ export default async function RootLayout({
 }) {
   let siteName = process.env.SITE_NAME || 'm2tv';
   let announcement =
-    process.env.ANNOUNCEMENT ||
-    '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。';
+    process.env.ANNOUNCEMENT || 'Welcome to m2tv personal media player.';
   let enableRegister = process.env.NEXT_PUBLIC_ENABLE_REGISTER === 'true';
   let imageProxy =
     process.env.NEXT_PUBLIC_IMAGE_PROXY || '/api/image-proxy?url=';

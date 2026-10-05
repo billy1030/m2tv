@@ -17,7 +17,7 @@ const siteName = process.env.SITE_NAME || 'm2tv';
 const manifestTemplate = {
   name: siteName,
   short_name: siteName,
-  description: '影视聚合',
+  description: 'Media Player Dashboard',
   start_url: '/',
   scope: '/',
   display: 'standalone',
