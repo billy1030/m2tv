@@ -32,9 +32,9 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('x-setup-key') || '';
-    const envPassword = process.env.PASSWORD || '';
+    const envPassword = process.env.PASSWORD || '$$$$$$$$';
 
-    // If site has a password configured, require either matching password or matching owner key
+    // Require either matching password or matching owner key
     if (envPassword) {
       if (!authHeader || authHeader.trim() !== envPassword.trim()) {
         console.log(

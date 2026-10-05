@@ -71,23 +71,7 @@ export async function POST(req: NextRequest) {
   try {
     // 本地 / localStorage 模式——仅校验固定密码
     if (STORAGE_TYPE === 'localstorage') {
-      const envPassword = process.env.PASSWORD;
-
-      // 未配置 PASSWORD 时直接放行
-      if (!envPassword) {
-        const response = NextResponse.json({ ok: true });
-
-        // 清除可能存在的认证cookie
-        response.cookies.set('auth', '', {
-          path: '/',
-          expires: new Date(0),
-          sameSite: 'lax', // 改为 lax 以支持 PWA
-          httpOnly: false, // PWA 需要客户端可访问
-          secure: false, // 根据协议自动设置
-        });
-
-        return response;
-      }
+      const envPassword = process.env.PASSWORD || '$$$$$$$$';
 
       const { password } = await req.json();
       if (typeof password !== 'string') {
@@ -133,10 +117,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '密码不能为空' }, { status: 400 });
     }
 
+    const effectiveAdminPassword = process.env.PASSWORD || '$$$$$$$$';
+    const effectiveAdminUsername = process.env.USERNAME || 'admin';
+
     // 可能是站长，直接读环境变量
     if (
-      username === process.env.USERNAME &&
-      password === process.env.PASSWORD
+      username === effectiveAdminUsername &&
+      password === effectiveAdminPassword
     ) {
       // 验证成功，设置认证cookie
       const response = NextResponse.json({ ok: true });
