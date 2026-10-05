@@ -13,7 +13,6 @@ import {
   UpdateStatus,
 } from '@/lib/version';
 
-import { useSite } from '@/components/SiteProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
 // 版本显示组件
@@ -39,10 +38,10 @@ function VersionDisplay() {
   return (
     <button
       onClick={() => window.open('https://github.com/billy1030/m2tv', '_blank')}
-      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 transition-colors cursor-pointer hover:text-gray-800 dark:hover:text-gray-200'
+      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 shadow-sm text-xs text-gray-700 dark:text-gray-300 transition-colors cursor-pointer hover:bg-white dark:hover:bg-zinc-800'
     >
-      <span className='font-mono'>
-        v{CURRENT_VERSION} ({COMMIT_ID})
+      <span className='font-mono font-semibold'>
+        m2tv v{CURRENT_VERSION} ({COMMIT_ID})
       </span>
       {!isChecking && updateStatus !== UpdateStatus.FETCH_FAILED && (
         <div
@@ -81,7 +80,6 @@ function LoginPageClient() {
   const [loading, setLoading] = useState(false);
   const [shouldAskUsername, setShouldAskUsername] = useState(false);
   const [enableRegister, setEnableRegister] = useState(false);
-  const { siteName } = useSite();
 
   // 在客户端挂载后设置配置
   useEffect(() => {
@@ -161,7 +159,7 @@ function LoginPageClient() {
       </div>
       <div className='relative z-10 w-full max-w-md rounded-3xl bg-gradient-to-b from-white/90 via-white/70 to-white/40 dark:from-zinc-900/90 dark:via-zinc-900/70 dark:to-zinc-900/40 backdrop-blur-xl shadow-2xl p-10 dark:border dark:border-zinc-800'>
         <h1 className='text-green-600 tracking-tight text-center text-3xl font-extrabold mb-8 bg-clip-text drop-shadow-sm'>
-          {siteName}
+          m2tv
         </h1>
         <form onSubmit={handleSubmit} className='space-y-8'>
           {shouldAskUsername && (
