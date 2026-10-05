@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { getAuthInfoFromBrowserCookie } from '@/lib/auth';
@@ -30,7 +30,7 @@ interface SystemStats {
   customCategoriesCount: number;
 }
 
-export default function SetupPage() {
+function SetupPageContent() {
   const router = useRouter();
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -419,5 +419,22 @@ export default function SetupPage() {
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className='flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900'>
+          <div className='flex items-center gap-3 text-gray-500 dark:text-gray-400'>
+            <RefreshCw size={20} className='animate-spin text-green-500' />
+            <span>加载中...</span>
+          </div>
+        </div>
+      }
+    >
+      <SetupPageContent />
+    </Suspense>
   );
 }
