@@ -2,8 +2,8 @@
 
 'use client';
 
-const CURRENT_VERSION = '20261006102101';
-const COMMIT_ID = '3e6005b';
+const CURRENT_VERSION = '20261006102150';
+const COMMIT_ID = '2175c58';
 
 // 版本检查结果枚举
 export enum UpdateStatus {
