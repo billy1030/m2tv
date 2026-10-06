@@ -24,8 +24,7 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
+        # packageManager in package.json will automatically specify exact version
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
