@@ -92,3 +92,27 @@ curl.exe -Iv "https://tv.vonnandryan.com"
 # 驗證登入頁面渲染正常 (HTTP 200 OK)
 curl.exe -I -s "https://tv.vonnandryan.com/login"
 ```
+
+---
+
+## 6. GitHub Secrets 的核心目的與安全機制 (Purpose of GitHub Secrets)
+
+在 CI/CD 自動化流程中，GitHub Secrets 扮演著安全中樞的角色：
+
+### 6.1 為什麼必須使用 GitHub Secrets？
+
+- **避免金鑰寫入代碼 (Zero Hardcoded Credentials)**：
+  若將 `CLOUDFLARE_API_TOKEN` 明文寫入 `.github/workflows/deploy-pages.yml`，任何對該倉庫有讀取權限的人均可查看，甚至遭爬蟲自動掃描竊取。
+- **程式碼與機密分離 (Separation of Code & Config)**：
+  程式碼中僅保留語法引用 `${{ secrets.CLOUDFLARE_API_TOKEN }}`，實際機密值由倉庫管理員於後台安全存放。
+
+### 6.2 四大關鍵安全防護機制
+
+1. **單向寫入與非對稱加密 (Write-Only Storage)**：
+   - 存入 Secret 後即經過強力加密，連管理者本人在網頁上也無法再次查看明文（只能覆蓋更新或刪除）。
+2. **日誌自動遮罩 (Automatic Log Masking)**：
+   - 若 CI/CD 執行期間的終端機輸出意外印出該 Token，GitHub Actions 系統會自動強制替換為 `***`，杜絕日誌外洩。
+3. **記憶體生命週期隔離 (In-Memory Injection)**：
+   - 僅在部署步驟執行當下暫時注入執行環境記憶體，部署完成後立即銷毀。
+4. **存取權限控制 (Security Boundaries)**：
+   - 外部 Fork 專案所發起的 Pull Request (PR) 預設無法存取倉庫 Secrets，防止惡意代碼竊取金鑰。
