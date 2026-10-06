@@ -116,3 +116,20 @@ curl.exe -I -s "https://tv.vonnandryan.com/login"
    - 僅在部署步驟執行當下暫時注入執行環境記憶體，部署完成後立即銷毀。
 4. **存取權限控制 (Security Boundaries)**：
    - 外部 Fork 專案所發起的 Pull Request (PR) 預設無法存取倉庫 Secrets，防止惡意代碼竊取金鑰。
+
+### 6.3 如何前往設定 GitHub Secrets (Where & How to Add)
+
+#### 直達設定網址：
+
+- **MoonTV 倉庫**：[https://github.com/billy1030/m2tv/settings/secrets/actions](https://github.com/billy1030/m2tv/settings/secrets/actions)
+
+#### 手動點擊路徑：
+
+1. 進入 GitHub 倉庫首頁。
+2. 點擊頂部選單最右邊的 ⚙️ **「Settings」**。
+3. 在左側選單往下找到 **Security** 區塊 ➔ 點擊 **「Secrets and variables」** ➔ 點擊 **「Actions」**。
+4. 點擊綠色按鈕 **「New repository secret」**。
+5. 填寫：
+   - **Name**: `CLOUDFLARE_API_TOKEN`
+   - **Secret**: 貼上您的 Cloudflare API Token
+6. 點擊 **Add secret** 儲存。
