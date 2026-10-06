@@ -44,5 +44,3 @@ sitemap-*.xml
 src/lib/runtime.ts
 public/manifest.json
 
-# user custom config
-config.json
