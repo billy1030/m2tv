@@ -1,46 +1,62 @@
 ﻿# MoonTV (m2tv) Cloudflare Pages 部署指南與維運技術文件
 
-本文件詳細記載 MoonTV (Next.js 14 App Router) 專案部署至 Cloudflare Pages 的架構設計、核心參數、API Token 設定與排查考量。
+本文件詳細記載 MoonTV (Next.js 14 App Router) 專案部署至 Cloudflare Pages 的架構設計、核心參數、自訂網域綁定、API Token 設定與排查考量。
 
 ---
 
 ## 1. 核心專案與環境資訊 (Key Information)
 
-| 項目                      | 數值 / 內容                                    | 說明                                                 |
-| :------------------------ | :--------------------------------------------- | :--------------------------------------------------- |
-| **專案名稱**              | `moontv` (原代碼標識 `m2tv`)                   | Cloudflare Pages 專案名稱                            |
-| **Cloudflare Account ID** | `827b99611b62c4ac9c6cfe95118973c3`             | 帳號專屬識別碼                                       |
-| **管理者帳號**            | `billy.lam@gmail.com`                          | Cloudflare 帳戶管理者                                |
-| **正式線上網域名稱**      | `https://moontv-1mv.pages.dev`                 | Cloudflare 自動配發之全域 HTTPS 網址                 |
-| **原預定網域說明**        | `m2tv.pages.dev` **已被他人佔用**              | 故採用專案名 `moontv`，分配至 `moontv-1mv.pages.dev` |
-| **GitHub 倉庫**           | `https://github.com/billy1030/m2tv` (`MoonTV`) | 主分支 `main`                                        |
-| **GitHub Secret 名稱**    | `CLOUDFLARE_API_TOKEN`                         | 供 GitHub Actions CI/CD 自動發布                     |
-| **核心技術棧**            | Next.js 14, React 18, Tailwind CSS, pnpm       | 採用 `@cloudflare/next-on-pages` 打包                |
+| 項目                                 | 數值 / 內容                                    | 說明                                               |
+| :----------------------------------- | :--------------------------------------------- | :------------------------------------------------- |
+| **專案名稱**                         | `moontv` (原代碼標識 `m2tv`)                   | Cloudflare Pages 專案名稱                          |
+| **Cloudflare Account ID**            | `827b99611b62c4ac9c6cfe95118973c3`             | 帳號專屬識別碼                                     |
+| **管理者帳號**                       | `billy.lam@gmail.com`                          | Cloudflare 帳戶管理者                              |
+| **正式生產獨立網域 (Custom Domain)** | **`https://tv.vonnandryan.com`**               | **已生效上線 (HTTPS / 200 OK)**                    |
+| **Pages 預設網域 (Default Domain)**  | `https://moontv-1mv.pages.dev`                 | Cloudflare 自動配發之備用網址                      |
+| **原預定網域說明**                   | `m2tv.pages.dev` **已被他人佔用**              | 故採用專案名 `moontv`，配發 `moontv-1mv.pages.dev` |
+| **GitHub 倉庫**                      | `https://github.com/billy1030/m2tv` (`MoonTV`) | 主分支 `main`                                      |
+| **GitHub Secret 名稱**               | `CLOUDFLARE_API_TOKEN`                         | 供 GitHub Actions CI/CD 自動發布                   |
+| **核心技術棧**                       | Next.js 14, React 18, Tailwind CSS, pnpm       | 採用 `@cloudflare/next-on-pages` 打包              |
 
 ---
 
-## 2. API Token 建立與權限配置 (Token Setup)
+## 2. 自訂網域配置 SOP (Custom Domain Setup)
 
-### 2.1 直達連結
+### 2.1 避坑與核心原理 (DNS vs Pages Custom Domain)
+
+- **單純在 DNS 加 CNAME 會導致 Error 1001**：
+  若僅在 DNS 區域新增 `CNAME tv.vonnandryan.com -> moontv-1mv.pages.dev`，訪問時會收到 `HTTP 409 Conflict (error code: 1001)` 與 SSL 握手失敗。
+- **必要步驟**：必須在 Cloudflare Pages 專案內完成「登記與啟用」，邊緣節點才會簽發 SSL 憑證並放行路由。
+
+### 2.2 設定步驟
+
+1. 開啟 Cloudflare Dashboard ➔ 進入 `moontv` 專案。
+2. 切換至 **Custom domains** 分頁 ➔ 點擊 **Set up a custom domain**。
+3. 輸入 `tv.vonnandryan.com` ➔ 點擊 **Continue** ➔ **Activate domain**。
+4. 等待 1 分鐘，狀態轉為 **Active (綠燈)** 即可。
+
+---
+
+## 3. API Token 建立與權限配置 (Token Setup)
+
+### 3.1 直達連結
 
 - **Cloudflare API Tokens 建立入口**：
   👉 [https://dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
 - **GitHub Repository Secrets 設定頁**：
   👉 [https://github.com/billy1030/m2tv/settings/secrets/actions](https://github.com/billy1030/m2tv/settings/secrets/actions)
 
-### 2.2 必備權限矩陣 (Permissions Matrix)
-
-MoonTV 專案需要以下權限：
+### 3.2 必備權限矩陣 (Permissions Matrix)
 
 - **Account Resources**:
   - `Cloudflare Pages`: **Edit** (建立與發布 Pages 專案)
   - `Workers Scripts`: **Edit** (發布 Next.js Edge Functions)
   - `Workers Observability`: **Edit** (日誌與監控)
-  - `Workers KV Storage`: **Edit** (若啟用 KV 快取)
+  - `Workers KV Storage`: **Edit** (預留 KV 快取)
   - `Account Settings`: **Read** (讀取帳號與配額)
-  - 範圍：`All accounts` (或指定帳號)
+  - 範圍：`All accounts`
 - **Zone Resources**:
-  - `Workers Routes`: **Edit** (若未來綁定自訂獨立網域)
+  - `Workers Routes`: **Edit** (支援自訂網域路由)
   - 範圍：`All zones`
 - **User Resources**:
   - `User Details`: **Read**
@@ -48,41 +64,31 @@ MoonTV 專案需要以下權限：
 
 ---
 
-## 3. 架構設計與部署策略 (Why GitHub Actions?)
+## 4. 架構設計與 CI/CD (.github/workflows/deploy-pages.yml)
 
-### 3.1 本機 Windows 限制
+### 4.1 本機 Windows 限制
 
 在 Windows 環境執行 `pnpm pages:build` 時：
 
 - `@cloudflare/next-on-pages` 會調用 Vercel CLI 進行 edge tracing，在 Windows 下會遭遇符號連結 (symlink) 與程序掛起 (hanging) 問題。
-- 官方給出警告：_Vercel CLI seems not to work reliably on Windows..._
+- **最佳實踐**：一律由 GitHub Actions 在 **Ubuntu Linux 容器** 中執行編譯打包。
 
-### 3.2 CI/CD 自動化方案 (.github/workflows/deploy-pages.yml)
+### 4.2 CI/CD 工作流設計
 
-- GitHub Actions 運行於 **Ubuntu 22.04 (Linux)** 原生環境。
-- 自動讀取 `package.json` 中的 `packageManager` 指定 pnpm 版本。
-- 執行 `pnpm pages:build` 生成 `.vercel/output/static`。
-- 調用 `cloudflare/wrangler-action@v3` 執行：
-  ```bash
-  npx wrangler pages deploy .vercel/output/static --project-name=moontv --commit-dirty=true
-  ```
+- 每次 `git push main` 自動執行：
+  1. 安裝對應版本之 pnpm。
+  2. `pnpm install --frozen-lockfile`。
+  3. `pnpm pages:build`。
+  4. 使用 `cloudflare/wrangler-action@v3` 自動部署至 `moontv` 專案。
 
 ---
 
-## 4. 維運與常用操作 (Operations & Troubleshooting)
+## 5. 維運與驗證指令 (Verification Commands)
 
-### 4.1 手動觸發部署
+```powershell
+# 驗證自訂網域 HTTP 狀態與轉跳
+curl.exe -Iv "https://tv.vonnandryan.com"
 
-1. 開啟 [GitHub Actions 分頁](https://github.com/billy1030/m2tv/actions)。
-2. 點選 **Deploy MoonTV to Cloudflare Pages**。
-3. 點擊 **Run workflow** ➔ 選擇 `main` 分支。
-
-### 4.2 Cloudflare Dashboard 維運
-
-- **專案管理首頁**：
-  👉 [https://dash.cloudflare.com/827b99611b62c4ac9c6cfe95118973c3/workers-and-pages](https://dash.cloudflare.com/827b99611b62c4ac9c6cfe95118973c3/workers-and-pages)
-- **Deployments 回退**：
-  進入 `moontv` 專案 ➔ **Deployments** 分頁，可檢視歷次版本與一鍵 Rollback。
-- **自訂網域綁定**：
-  若欲使用自己的獨立網域（例如 `tv.yourdomain.com`）：
-  進入 `moontv` ➔ **Custom domains** ➔ 點擊 **Set up a custom domain** 輸入即可。
+# 驗證登入頁面渲染正常 (HTTP 200 OK)
+curl.exe -I -s "https://tv.vonnandryan.com/login"
+```
