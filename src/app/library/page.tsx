@@ -30,17 +30,15 @@ interface VodItem {
   sources?: string[];
 }
 
-const CURRENT_YEAR = new Date().getFullYear(); // 动态获取最新年份
-
 const YEAR_OPTIONS = [
   { label: '全部年份', value: '' },
-  { label: `${CURRENT_YEAR}`, value: `${CURRENT_YEAR}` },
-  { label: `${CURRENT_YEAR - 1}`, value: `${CURRENT_YEAR - 1}` },
-  { label: `${CURRENT_YEAR - 2}`, value: `${CURRENT_YEAR - 2}` },
-  { label: `${CURRENT_YEAR - 3}`, value: `${CURRENT_YEAR - 3}` },
-  { label: `${CURRENT_YEAR - 4}`, value: `${CURRENT_YEAR - 4}` },
-  { label: `${CURRENT_YEAR - 5}`, value: `${CURRENT_YEAR - 5}` },
-  { label: `${CURRENT_YEAR - 6}`, value: `${CURRENT_YEAR - 6}` },
+  { label: '2026', value: '2026' },
+  { label: '2025', value: '2025' },
+  { label: '2024', value: '2024' },
+  { label: '2023', value: '2023' },
+  { label: '2022', value: '2022' },
+  { label: '2021', value: '2021' },
+  { label: '2020', value: '2020' },
   { label: '2020年前', value: 'earlier' },
 ];
 
