@@ -24,6 +24,7 @@ import {
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
 
+import { useDisplayMode } from '@/components/DisplayModeContext';
 import EpisodeSelector from '@/components/EpisodeSelector';
 import PageLayout from '@/components/PageLayout';
 
@@ -37,6 +38,7 @@ declare global {
 function PlayPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mode } = useDisplayMode();
 
   // -----------------------------------------------------------------------------
   // 状态变量（State）
@@ -1743,10 +1745,10 @@ function PlayPageClient() {
   return (
     <PageLayout activePath='/play'>
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
-        {/* 第一行：影片标题 */}
-        <div className='py-1'>
+        {/* 第一行：影片标题（向右留出 2-3 個字位置，避免與左側返回箭頭重疊） */}
+        <div className='py-1 pl-11 md:pl-12'>
           <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
-            {videoTitle || '影片标题'}
+            {videoTitle || '影片標題'}
             {totalEpisodes > 1 && (
               <span className='text-gray-500 dark:text-gray-400'>
                 {` > 第 ${currentEpisodeIndex + 1} 集`}
@@ -1882,57 +1884,17 @@ function PlayPageClient() {
         </div>
 
         {/* 详情展示 */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
-          {/* 文字区 */}
-          <div className='md:col-span-3'>
-            <div className='p-6 flex flex-col min-h-0'>
-              {/* 标题 */}
-              <h1 className='text-3xl font-bold mb-2 tracking-wide flex items-center flex-shrink-0 text-center md:text-left w-full'>
-                {videoTitle || '影片标题'}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggleFavorite();
-                  }}
-                  className='ml-3 flex-shrink-0 hover:opacity-80 transition-opacity'
-                >
-                  <FavoriteIcon filled={favorited} />
-                </button>
-              </h1>
-
-              {/* 关键信息行 */}
-              <div className='flex flex-wrap items-center gap-3 text-base mb-4 opacity-80 flex-shrink-0'>
-                {detail?.class && (
-                  <span className='text-green-600 font-semibold'>
-                    {detail.class}
-                  </span>
-                )}
-                {(detail?.year || videoYear) && (
-                  <span>{detail?.year || videoYear}</span>
-                )}
-                {detail?.source_name && (
-                  <span className='border border-gray-500/60 px-2 py-[1px] rounded'>
-                    {detail.source_name}
-                  </span>
-                )}
-                {detail?.type_name && <span>{detail.type_name}</span>}
-              </div>
-              {/* 剧情简介 */}
-              {detail?.desc && (
-                <div
-                  className='mt-0 text-base leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide'
-                  style={{ whiteSpace: 'pre-line' }}
-                >
-                  {detail.desc}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 封面展示 */}
-          <div className='hidden md:block md:col-span-1 md:order-first'>
-            <div className='pl-0 py-4 pr-6'>
-              <div className='bg-gray-300 dark:bg-gray-700 aspect-[2/3] flex items-center justify-center rounded-xl overflow-hidden'>
+        <div
+          className={`flex ${
+            mode === 'tv'
+              ? 'gap-3 max-w-3xl items-start'
+              : 'grid grid-cols-1 md:grid-cols-4 gap-4'
+          }`}
+        >
+          {/* 封面展示（在電視模式下與普通卡片完全同比例，縮小至 w-[90px]） */}
+          <div className='hidden md:block flex-shrink-0'>
+            <div className={mode === 'tv' ? 'w-[90px]' : 'w-44 pr-6 py-4'}>
+              <div className='bg-gray-300 dark:bg-gray-700 aspect-[2/3] w-full flex items-center justify-center rounded-lg overflow-hidden shadow-sm'>
                 {videoCover ? (
                   <img
                     src={processImageUrl(videoCover)}
@@ -1940,11 +1902,73 @@ function PlayPageClient() {
                     className='w-full h-full object-cover'
                   />
                 ) : (
-                  <span className='text-gray-600 dark:text-gray-400'>
-                    封面图片
+                  <span className='text-gray-600 dark:text-gray-400 text-[10px]'>
+                    封面圖片
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* 文字区 */}
+          <div className='flex-1 min-w-0'>
+            <div
+              className={`flex flex-col min-h-0 ${
+                mode === 'tv' ? 'p-0.5' : 'p-6'
+              }`}
+            >
+              {/* 标题 */}
+              <h1
+                className={`font-bold tracking-wide flex items-center flex-shrink-0 text-center md:text-left w-full ${
+                  mode === 'tv' ? 'text-sm md:text-base mb-1' : 'text-3xl mb-2'
+                }`}
+              >
+                {videoTitle || '影片標題'}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFavorite();
+                  }}
+                  className='ml-2 flex-shrink-0 hover:opacity-80 transition-opacity'
+                >
+                  <FavoriteIcon
+                    filled={favorited}
+                    size={mode === 'tv' ? 16 : 28}
+                  />
+                </button>
+              </h1>
+
+              {/* 关键信息行 */}
+              <div
+                className={`flex flex-wrap items-center gap-1.5 opacity-80 flex-shrink-0 ${
+                  mode === 'tv' ? 'text-[10px] mb-1' : 'text-base mb-4'
+                }`}
+              >
+                {detail?.class && (
+                  <span className='text-green-600 font-semibold'>
+                    {detail.class}
+                  </span>
+                )}
+                {(detail?.year || videoYear) && (
+                  <span className='bg-gray-100 dark:bg-gray-800 px-1 py-0.2 rounded border border-gray-200/50 dark:border-gray-700/50'>
+                    {detail?.year || videoYear}
+                  </span>
+                )}
+                {detail?.type_name && <span>{detail.type_name}</span>}
+              </div>
+              {/* 剧情简介 */}
+              {detail?.desc && (
+                <div
+                  className={`mt-0 leading-relaxed opacity-90 overflow-y-auto pr-2 flex-1 min-h-0 scrollbar-hide ${
+                    mode === 'tv'
+                      ? 'text-[11px] line-clamp-3 max-h-16 text-gray-600 dark:text-gray-300'
+                      : 'text-base'
+                  }`}
+                  style={{ whiteSpace: 'pre-line' }}
+                >
+                  {detail.desc}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1954,11 +1978,17 @@ function PlayPageClient() {
 }
 
 // FavoriteIcon 组件
-const FavoriteIcon = ({ filled }: { filled: boolean }) => {
+const FavoriteIcon = ({
+  filled,
+  size = 28,
+}: {
+  filled: boolean;
+  size?: number;
+}) => {
   if (filled) {
     return (
       <svg
-        className='h-7 w-7'
+        style={{ width: `${size}px`, height: `${size}px` }}
         viewBox='0 0 24 24'
         xmlns='http://www.w3.org/2000/svg'
       >
@@ -1974,7 +2004,10 @@ const FavoriteIcon = ({ filled }: { filled: boolean }) => {
     );
   }
   return (
-    <Heart className='h-7 w-7 stroke-[1] text-gray-600 dark:text-gray-300' />
+    <Heart
+      style={{ width: `${size}px`, height: `${size}px` }}
+      className='stroke-[1] text-gray-600 dark:text-gray-300'
+    />
   );
 };
 

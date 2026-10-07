@@ -2,10 +2,9 @@
 
 'use client';
 
-import { Clover, Film, Home, Search, Star, Tv } from 'lucide-react';
+import { Database, Film, Home, Search, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 interface MobileBottomNavProps {
   /**
@@ -20,39 +19,25 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
   // 当前激活路径：优先使用传入的 activePath，否则回退到浏览器地址
   const currentActive = activePath ?? pathname;
 
-  const [navItems, setNavItems] = useState([
-    { icon: Home, label: '首页', href: '/' },
-    { icon: Search, label: '搜索', href: '/search' },
+  const navItems = [
+    { icon: Home, label: '首頁', href: '/' },
+    { icon: Search, label: '搜尋', href: '/search' },
     {
       icon: Film,
-      label: '电影',
+      label: '電影',
       href: '/db?type=movie',
     },
     {
       icon: Tv,
-      label: '剧集',
+      label: '劇集',
       href: '/db?type=tv',
     },
     {
-      icon: Clover,
-      label: '综艺',
-      href: '/db?type=show',
+      icon: Database,
+      label: '片庫',
+      href: '/library',
     },
-  ]);
-
-  useEffect(() => {
-    const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setNavItems((prevItems) => [
-        ...prevItems,
-        {
-          icon: Star,
-          label: '自定义',
-          href: '/db?type=custom',
-        },
-      ]);
-    }
-  }, []);
+  ];
 
   const isActive = (href: string) => {
     const typeMatch = href.match(/type=([^&]+)/)?.[1];

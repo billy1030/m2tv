@@ -12,6 +12,7 @@ import { DoubanItem, DoubanResult } from '@/lib/types';
 import DoubanCardSkeleton from '@/components/DbCardSkeleton';
 import DoubanCustomSelector from '@/components/DbCustomSelector';
 import DoubanSelector from '@/components/DbSelector';
+import { useDisplayMode } from '@/components/DisplayModeContext';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
@@ -357,12 +358,12 @@ function DoubanPageClient() {
   const getPageTitle = () => {
     // 根据 type 生成标题
     return type === 'movie'
-      ? '电影'
+      ? '豆瓣推介電影'
       : type === 'tv'
-      ? '电视剧'
+      ? '豆瓣推介劇集'
       : type === 'show'
-      ? '综艺'
-      : '自定义';
+      ? '豆瓣推介綜藝'
+      : '自定義';
   };
 
   const getActivePath = () => {
@@ -374,24 +375,27 @@ function DoubanPageClient() {
     return activePath;
   };
 
+  const { mode, gridClass } = useDisplayMode();
+
   return (
     <PageLayout activePath={getActivePath()}>
-      <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible'>
+      <div
+        className={`px-2 sm:px-6 py-2 sm:py-4 overflow-visible ${
+          mode === 'tv' ? 'max-w-none' : ''
+        }`}
+      >
         {/* 页面标题和选择器 */}
-        <div className='mb-6 sm:mb-8 space-y-4 sm:space-y-6'>
+        <div className='mb-3 sm:mb-4 space-y-2'>
           {/* 页面标题 */}
-          <div>
-            <h1 className='text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2 dark:text-gray-200'>
+          <div className='flex items-center justify-between'>
+            <h1 className='text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-200'>
               {getPageTitle()}
             </h1>
-            <p className='text-sm sm:text-base text-gray-600 dark:text-gray-400'>
-              精选推荐内容
-            </p>
           </div>
 
           {/* 选择器组件 */}
           {type !== 'custom' ? (
-            <div className='bg-white/60 dark:bg-gray-800/40 rounded-2xl p-4 sm:p-6 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
+            <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-3 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
               <DoubanSelector
                 type={type as 'movie' | 'tv' | 'show'}
                 primarySelection={primarySelection}
@@ -401,7 +405,7 @@ function DoubanPageClient() {
               />
             </div>
           ) : (
-            <div className='bg-white/60 dark:bg-gray-800/40 rounded-2xl p-4 sm:p-6 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
+            <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-3 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>
               <DoubanCustomSelector
                 customCategories={customCategories}
                 primarySelection={primarySelection}
@@ -414,9 +418,9 @@ function DoubanPageClient() {
         </div>
 
         {/* 内容展示区域 */}
-        <div className='max-w-[95%] mx-auto mt-8 overflow-visible'>
+        <div className='w-full mx-auto mt-3 sm:mt-4 overflow-visible'>
           {/* 内容网格 */}
-          <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20'>
+          <div className={`justify-start ${gridClass}`}>
             {loading || !selectorsReady
               ? // 显示骨架屏
                 skeletonData.map((index) => <DoubanCardSkeleton key={index} />)
@@ -451,7 +455,9 @@ function DoubanPageClient() {
               {isLoadingMore && (
                 <div className='flex items-center gap-2'>
                   <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-green-500'></div>
-                  <span className='text-gray-600'>加载中...</span>
+                  <span className='text-gray-600 dark:text-gray-400'>
+                    載入中...
+                  </span>
                 </div>
               )}
             </div>
@@ -459,12 +465,12 @@ function DoubanPageClient() {
 
           {/* 没有更多数据提示 */}
           {!hasMore && doubanData.length > 0 && (
-            <div className='text-center text-gray-500 py-8'>已加载全部内容</div>
+            <div className='text-center text-gray-500 py-8'>已載入全部內容</div>
           )}
 
           {/* 空状态 */}
           {!loading && doubanData.length === 0 && (
-            <div className='text-center text-gray-500 py-8'>暂无相关内容</div>
+            <div className='text-center text-gray-500 py-8'>暫無相關內容</div>
           )}
         </div>
       </div>

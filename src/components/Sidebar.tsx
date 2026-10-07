@@ -4,12 +4,14 @@
 
 import {
   Clover,
+  Database,
   Film,
+  Flame,
   HardDriveUpload,
   Home,
   Menu,
   Search,
-  Star,
+  Sparkles,
   Tv,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +25,7 @@ import {
   useState,
 } from 'react';
 
+import { useDisplayMode } from './DisplayModeContext';
 import { useSite } from './SiteProvider';
 
 interface SidebarContextType {
@@ -38,12 +41,19 @@ export const useSidebar = () => useContext(SidebarContext);
 // 可替换为你自己的 logo 图片
 const Logo = () => {
   const { siteName } = useSite();
+  const { mode } = useDisplayMode();
   return (
     <Link
       href='/'
-      className='flex items-center justify-center h-16 select-none hover:opacity-80 transition-opacity duration-200'
+      className={`flex items-center justify-start select-none hover:opacity-80 transition-opacity duration-200 ${
+        mode === 'tv' ? 'h-10' : 'h-16'
+      }`}
     >
-      <span className='text-2xl font-bold text-green-600 tracking-tight'>
+      <span
+        className={`${
+          mode === 'tv' ? 'text-lg' : 'text-2xl'
+        } font-bold text-green-600 tracking-tight`}
+      >
         {siteName}
       </span>
     </Link>
@@ -66,6 +76,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { mode } = useDisplayMode();
   // 若同一次 SPA 会话中已经读取过折叠状态，则直接复用，避免闪烁
   const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     if (
@@ -133,37 +144,38 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
     isCollapsed,
   };
 
-  const [menuItems, setMenuItems] = useState([
+  const menuItems = [
     {
       icon: Film,
-      label: '电影',
+      label: '豆瓣推介電影',
       href: '/db?type=movie',
     },
     {
       icon: Tv,
-      label: '剧集',
+      label: '豆瓣推介劇集',
       href: '/db?type=tv',
     },
     {
       icon: Clover,
-      label: '综艺',
+      label: '豆瓣推介綜藝',
       href: '/db?type=show',
     },
-  ]);
-
-  useEffect(() => {
-    const runtimeConfig = (window as any).RUNTIME_CONFIG;
-    if (runtimeConfig?.CUSTOM_CATEGORIES?.length > 0) {
-      setMenuItems((prevItems) => [
-        ...prevItems,
-        {
-          icon: Star,
-          label: '自定义',
-          href: '/db?type=custom',
-        },
-      ]);
-    }
-  }, []);
+    {
+      icon: Flame,
+      label: '短劇',
+      href: '/library?type=duanju',
+    },
+    {
+      icon: Sparkles,
+      label: '動漫',
+      href: '/library?type=anime',
+    },
+    {
+      icon: Database,
+      label: '片庫直連',
+      href: '/library',
+    },
+  ];
 
   return (
     <SidebarContext.Provider value={contextValue}>
@@ -172,7 +184,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
         <aside
           data-sidebar
           className={`fixed top-0 left-0 h-screen bg-white/40 backdrop-blur-xl transition-all duration-300 border-r border-gray-200/50 z-10 shadow-lg dark:bg-gray-900/70 dark:border-gray-700/50 ${
-            isCollapsed ? 'w-16' : 'w-64'
+            isCollapsed ? 'w-16' : 'w-[150px]'
           }`}
           style={{
             backdropFilter: 'blur(20px)',
@@ -181,20 +193,20 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
         >
           <div className='flex h-full flex-col'>
             {/* 顶部 Logo 区域 */}
-            <div className='relative h-16'>
+            <div className={`relative ${mode === 'tv' ? 'h-10' : 'h-16'}`}>
               <div
-                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+                className={`absolute inset-0 flex items-center justify-start pl-3 transition-opacity duration-200 ${
                   isCollapsed ? 'opacity-0' : 'opacity-100'
                 }`}
               >
-                <div className='w-[calc(100%-4rem)] flex justify-center'>
+                <div className='w-[calc(100%-2.5rem)] flex justify-start'>
                   {!isCollapsed && <Logo />}
                 </div>
               </div>
               <button
                 onClick={handleToggle}
                 className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-colors duration-200 z-10 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 ${
-                  isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-2'
+                  isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-1.5'
                 }`}
               >
                 <Menu className='h-4 w-4' />
@@ -202,21 +214,29 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
             </div>
 
             {/* 首页和搜索导航 */}
-            <nav className='px-2 mt-4 space-y-1'>
+            <nav
+              className={`px-1.5 ${
+                mode === 'tv' ? 'mt-1 space-y-0.5' : 'mt-4 space-y-1'
+              }`}
+            >
               <Link
                 href='/'
                 onClick={() => setActive('/')}
                 data-active={active === '/'}
-                className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 min-h-[40px] dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
-                  isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
-                } gap-3 justify-start`}
+                className={`group flex items-center rounded-lg px-2 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
+                  mode === 'tv' ? 'py-1 min-h-[30px]' : 'py-2 min-h-[40px]'
+                } ${
+                  isCollapsed
+                    ? 'w-full justify-center pl-0'
+                    : 'pl-2.5 gap-2 justify-start'
+                }`}
               >
-                <div className='w-4 h-4 flex items-center justify-center'>
+                <div className='w-4 h-4 flex items-center justify-center shrink-0'>
                   <Home className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-gray-400 dark:group-hover:text-green-400 dark:data-[active=true]:text-green-400' />
                 </div>
                 {!isCollapsed && (
-                  <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
-                    首页
+                  <span className='whitespace-nowrap text-xs sm:text-sm transition-opacity duration-200 opacity-100'>
+                    首頁
                   </span>
                 )}
               </Link>
@@ -228,24 +248,32 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                   setActive('/search');
                 }}
                 data-active={active === '/search'}
-                className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 min-h-[40px] dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
-                  isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
-                } gap-3 justify-start`}
+                className={`group flex items-center rounded-lg px-2 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
+                  mode === 'tv' ? 'py-1 min-h-[30px]' : 'py-2 min-h-[40px]'
+                } ${
+                  isCollapsed
+                    ? 'w-full justify-center pl-0'
+                    : 'pl-2.5 gap-2 justify-start'
+                }`}
               >
-                <div className='w-4 h-4 flex items-center justify-center'>
+                <div className='w-4 h-4 flex items-center justify-center shrink-0'>
                   <Search className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-gray-400 dark:group-hover:text-green-400 dark:data-[active=true]:text-green-400' />
                 </div>
                 {!isCollapsed && (
-                  <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
-                    搜索
+                  <span className='whitespace-nowrap text-xs sm:text-sm transition-opacity duration-200 opacity-100'>
+                    搜尋
                   </span>
                 )}
               </Link>
             </nav>
 
             {/* 菜单项 */}
-            <div className='flex-1 overflow-y-auto px-2 pt-4'>
-              <div className='space-y-1'>
+            <div
+              className={`flex-1 overflow-y-auto px-1.5 ${
+                mode === 'tv' ? 'pt-1.5' : 'pt-4'
+              }`}
+            >
+              <div className={mode === 'tv' ? 'space-y-0.5' : 'space-y-1'}>
                 {menuItems.map((item) => {
                   // 检查当前路径是否匹配这个菜单项
                   const typeMatch = item.href.match(/type=([^&]+)/)?.[1];
@@ -265,15 +293,21 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                       href={item.href}
                       onClick={() => setActive(item.href)}
                       data-active={isActive}
-                      className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 min-h-[40px] dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
-                        isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
-                      } gap-3 justify-start`}
+                      className={`group flex items-center rounded-lg px-2 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
+                        mode === 'tv'
+                          ? 'py-1 min-h-[30px]'
+                          : 'py-2 min-h-[40px]'
+                      } ${
+                        isCollapsed
+                          ? 'w-full justify-center pl-0'
+                          : 'pl-2.5 gap-2 justify-start'
+                      }`}
                     >
-                      <div className='w-4 h-4 flex items-center justify-center'>
+                      <div className='w-4 h-4 flex items-center justify-center shrink-0'>
                         <Icon className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-gray-400 dark:group-hover:text-green-400 dark:data-[active=true]:text-green-400' />
                       </div>
                       {!isCollapsed && (
-                        <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
+                        <span className='whitespace-nowrap text-xs tracking-tight transition-opacity duration-200 opacity-100'>
                           {item.label}
                         </span>
                       )}
@@ -282,23 +316,31 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                 })}
               </div>
 
-              {/* 配置向导入口 */}
-              <div className='pt-2 mt-2 border-t border-gray-200/50 dark:border-gray-700/50'>
+              {/* 配置嚮導入口 */}
+              <div
+                className={`mt-1.5 border-t border-gray-200/50 dark:border-gray-700/50 ${
+                  mode === 'tv' ? 'pt-1' : 'pt-2 mt-2'
+                }`}
+              >
                 <Link
                   href='/setup'
                   onClick={() => setActive('/setup')}
                   data-active={active === '/setup'}
-                  title='配置向导 (Setup)'
-                  className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-sm text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 min-h-[40px] dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
-                    isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
-                  } gap-3 justify-start`}
+                  title='配置嚮導 (Setup)'
+                  className={`group flex items-center rounded-lg px-2 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 dark:text-gray-300 dark:hover:text-green-400 dark:data-[active=true]:bg-green-500/10 dark:data-[active=true]:text-green-400 ${
+                    mode === 'tv' ? 'py-1 min-h-[30px]' : 'py-2 min-h-[40px]'
+                  } ${
+                    isCollapsed
+                      ? 'w-full justify-center pl-0'
+                      : 'pl-2.5 gap-2 justify-start'
+                  }`}
                 >
-                  <div className='w-4 h-4 flex items-center justify-center'>
+                  <div className='w-4 h-4 flex items-center justify-center shrink-0'>
                     <HardDriveUpload className='h-4 w-4 text-green-500 group-hover:text-green-600 data-[active=true]:text-green-700 dark:text-green-400 dark:group-hover:text-green-300' />
                   </div>
                   {!isCollapsed && (
-                    <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
-                      配置向导
+                    <span className='whitespace-nowrap text-xs tracking-tight transition-opacity duration-200 opacity-100'>
+                      配置嚮導
                     </span>
                   )}
                 </Link>
@@ -308,7 +350,7 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
         </aside>
         <div
           className={`transition-all duration-300 sidebar-offset ${
-            isCollapsed ? 'w-16' : 'w-64'
+            isCollapsed ? 'w-16' : 'w-[150px]'
           }`}
         ></div>
       </div>

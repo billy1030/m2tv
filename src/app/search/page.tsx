@@ -15,6 +15,7 @@ import {
 import { SearchResult } from '@/lib/types';
 import { yellowWords } from '@/lib/yellow';
 
+import { useDisplayMode } from '@/components/DisplayModeContext';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
@@ -45,11 +46,27 @@ function SearchPageClient() {
   const [viewMode, setViewMode] = useState<'agg' | 'all'>(() => {
     return getDefaultAggregate() ? 'agg' : 'all';
   });
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+
+  // 年份过滤后的搜索结果
+  const filteredSearchResults = useMemo(() => {
+    if (selectedYear === 'all') return searchResults;
+    return searchResults.filter((item) => {
+      const yr = parseInt(item.year, 10);
+      if (selectedYear === '2025') return item.year === '2025';
+      if (selectedYear === '2024') return item.year === '2024';
+      if (selectedYear === '2023') return item.year === '2023';
+      if (selectedYear === '2020-2022')
+        return !isNaN(yr) && yr >= 2020 && yr <= 2022;
+      if (selectedYear === 'earlier') return !isNaN(yr) && yr < 2020;
+      return true;
+    });
+  }, [searchResults, selectedYear]);
 
   // 聚合后的结果（按标题和年份分组）
   const aggregatedResults = useMemo(() => {
     const map = new Map<string, SearchResult[]>();
-    searchResults.forEach((item) => {
+    filteredSearchResults.forEach((item) => {
       // 使用 title + year + type 作为键，year 必然存在，但依然兜底 'unknown'
       const key = `${item.title.replaceAll(' ', '')}-${
         item.year || 'unknown'
@@ -243,61 +260,95 @@ function SearchPageClient() {
     }
   };
 
+  const { mode, gridClass } = useDisplayMode();
+
   return (
     <PageLayout activePath='/search'>
-      <div className='px-4 sm:px-10 py-4 sm:py-8 overflow-visible mb-10'>
-        {/* 搜索框 */}
-        <div className='mb-8'>
-          <form onSubmit={handleSearch} className='max-w-2xl mx-auto'>
+      <div
+        className={`px-2 sm:px-6 py-2 sm:py-4 overflow-visible mb-6 ${
+          mode === 'tv' ? 'max-w-none' : ''
+        }`}
+      >
+        {/* 搜索框：靠左排列，宽度限制約 15 字元（避免與右上方圖示重疊） */}
+        <div className='mb-3 flex justify-start'>
+          <form onSubmit={handleSearch} className='w-full max-w-[240px]'>
             <div className='relative'>
-              <Search className='absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500' />
+              <Search className='absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 dark:text-gray-500' />
               <input
                 id='searchInput'
                 type='text'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder='搜索电影、电视剧...'
-                className='w-full h-12 rounded-lg bg-gray-50/80 py-3 pl-10 pr-4 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:bg-white border border-gray-200/50 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:bg-gray-700 dark:border-gray-700'
+                placeholder='搜尋影片片名...'
+                className='w-full h-8 rounded-lg bg-gray-50/80 py-1 pl-8 pr-3 text-xs sm:text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-green-400 focus:bg-white border border-gray-200/50 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:placeholder-gray-500 dark:focus:bg-gray-700 dark:border-gray-700'
               />
             </div>
           </form>
         </div>
 
         {/* 搜索结果或搜索历史 */}
-        <div className='max-w-[95%] mx-auto mt-12 overflow-visible'>
+        <div className='w-full mx-auto mt-3 overflow-visible'>
           {isLoading ? (
-            <div className='flex justify-center items-center h-40'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-green-500'></div>
+            <div className='flex justify-center items-center h-28'>
+              <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-green-500'></div>
             </div>
           ) : showResults ? (
-            <section className='mb-12'>
+            <section className='mb-6'>
               {/* 标题 + 聚合开关 */}
-              <div className='mb-8 flex items-center justify-between'>
-                <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                  搜索结果
+              <div className='mb-3 flex items-center justify-between gap-2 flex-wrap'>
+                <h2 className='text-base sm:text-xl font-bold text-gray-800 dark:text-gray-200'>
+                  搜尋結果
                 </h2>
-                {/* 聚合开关 */}
-                <label className='flex items-center gap-2 cursor-pointer select-none'>
-                  <span className='text-sm text-gray-700 dark:text-gray-300'>
-                    聚合
-                  </span>
-                  <div className='relative'>
-                    <input
-                      type='checkbox'
-                      className='sr-only peer'
-                      checked={viewMode === 'agg'}
-                      onChange={() =>
-                        setViewMode(viewMode === 'agg' ? 'all' : 'agg')
-                      }
-                    />
-                    <div className='w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
-                    <div className='absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4'></div>
+                {/* 年份筛选与聚合开关 */}
+                <div className='flex items-center gap-3 flex-wrap'>
+                  {/* 年份筛选药丸 */}
+                  <div className='flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-hide'>
+                    {[
+                      { label: '全部年份', value: 'all' },
+                      { label: '2025', value: '2025' },
+                      { label: '2024', value: '2024' },
+                      { label: '2023', value: '2023' },
+                      { label: '2020-2022', value: '2020-2022' },
+                      { label: '更早', value: 'earlier' },
+                    ].map((btn) => (
+                      <button
+                        key={btn.value}
+                        type='button'
+                        onClick={() => setSelectedYear(btn.value)}
+                        className={`text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium ${
+                          selectedYear === btn.value
+                            ? 'bg-green-500 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
                   </div>
-                </label>
+
+                  {/* 聚合开关 */}
+                  <label className='flex items-center gap-2 cursor-pointer select-none shrink-0'>
+                    <span className='text-sm text-gray-700 dark:text-gray-300'>
+                      聚合
+                    </span>
+                    <div className='relative'>
+                      <input
+                        type='checkbox'
+                        className='sr-only peer'
+                        checked={viewMode === 'agg'}
+                        onChange={() =>
+                          setViewMode(viewMode === 'agg' ? 'all' : 'agg')
+                        }
+                      />
+                      <div className='w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                      <div className='absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4'></div>
+                    </div>
+                  </label>
+                </div>
               </div>
               <div
-                key={`search-results-${viewMode}`}
-                className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'
+                key={`search-results-${viewMode}-${selectedYear}`}
+                className={`justify-start ${gridClass}`}
               >
                 {viewMode === 'agg'
                   ? aggregatedResults.map(([mapKey, group]) => {
@@ -315,7 +366,7 @@ function SearchPageClient() {
                         </div>
                       );
                     })
-                  : searchResults.map((item) => (
+                  : filteredSearchResults.map((item) => (
                       <div
                         key={`all-${item.source}-${item.id}`}
                         className='w-full'
@@ -341,28 +392,28 @@ function SearchPageClient() {
                     ))}
                 {searchResults.length === 0 && (
                   <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
-                    未找到相关结果
+                    未找到相關結果
                   </div>
                 )}
               </div>
             </section>
           ) : searchHistory.length > 0 ? (
             // 搜索历史
-            <section className='mb-12'>
-              <h2 className='mb-4 text-xl font-bold text-gray-800 text-left dark:text-gray-200'>
-                搜索历史
+            <section className='mb-6'>
+              <h2 className='mb-3 text-base sm:text-lg font-bold text-gray-800 text-left dark:text-gray-200 flex items-center justify-between'>
+                <span>搜尋歷史</span>
                 {searchHistory.length > 0 && (
                   <button
                     onClick={() => {
                       clearSearchHistory(); // 事件监听会自动更新界面
                     }}
-                    className='ml-3 text-sm text-gray-500 hover:text-red-500 transition-colors dark:text-gray-400 dark:hover:text-red-500'
+                    className='text-xs font-normal text-gray-400 hover:text-red-500 transition-colors dark:text-gray-500 dark:hover:text-red-400'
                   >
                     清空
                   </button>
                 )}
               </h2>
-              <div className='flex flex-wrap gap-2'>
+              <div className='flex flex-wrap gap-1.5'>
                 {searchHistory.map((item) => (
                   <div key={item} className='relative group'>
                     <button
@@ -378,7 +429,7 @@ function SearchPageClient() {
                     </button>
                     {/* 删除按钮 */}
                     <button
-                      aria-label='删除搜索历史'
+                      aria-label='刪除搜尋歷史'
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();

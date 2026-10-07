@@ -308,11 +308,11 @@ export const UserMenu: React.FC = () => {
   const getRoleText = (role?: string) => {
     switch (role) {
       case 'owner':
-        return '站长';
+        return '站長';
       case 'admin':
-        return '管理员';
+        return '管理員';
       case 'user':
-        return '用户';
+        return '使用者';
       default:
         return '';
     }
@@ -334,7 +334,7 @@ export const UserMenu: React.FC = () => {
           <div className='space-y-1'>
             <div className='flex items-center justify-between'>
               <span className='text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                当前用户
+                目前使用者
               </span>
               <span
                 className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
@@ -353,7 +353,7 @@ export const UserMenu: React.FC = () => {
                 {authInfo?.username || 'default'}
               </div>
               <div className='text-[10px] text-gray-400 dark:text-gray-500'>
-                数据存储：
+                數據儲存：
                 {storageType === 'localstorage' ? '本地' : storageType}
               </div>
             </div>
@@ -368,7 +368,7 @@ export const UserMenu: React.FC = () => {
             className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
           >
             <Settings className='w-4 h-4 text-gray-500 dark:text-gray-400' />
-            <span className='font-medium'>设置</span>
+            <span className='font-medium'>設定</span>
           </button>
 
           {/* 动态配置导入向导 (Setup) */}
@@ -380,7 +380,7 @@ export const UserMenu: React.FC = () => {
             className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
           >
             <HardDriveUpload className='w-4 h-4 text-green-500' />
-            <span className='font-medium'>配置导入向导</span>
+            <span className='font-medium'>配置導入嚮導</span>
           </button>
 
           {/* 管理面板按钮 */}
@@ -401,7 +401,7 @@ export const UserMenu: React.FC = () => {
               className='w-full px-3 py-2 text-left flex items-center gap-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm'
             >
               <KeyRound className='w-4 h-4 text-gray-500 dark:text-gray-400' />
-              <span className='font-medium'>修改密码</span>
+              <span className='font-medium'>修改密碼</span>
             </button>
           )}
 

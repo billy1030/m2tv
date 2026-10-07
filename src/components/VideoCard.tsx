@@ -16,6 +16,7 @@ import {
 import { SearchResult } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
 
+import { useDisplayMode } from '@/components/DisplayModeContext';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
 
 interface VideoCardProps {
@@ -35,6 +36,7 @@ interface VideoCardProps {
   rate?: string;
   items?: SearchResult[];
   type?: string;
+  area?: string;
 }
 
 export default function VideoCard({
@@ -54,8 +56,11 @@ export default function VideoCard({
   rate,
   items,
   type = '',
+  area,
 }: VideoCardProps) {
   const router = useRouter();
+  const { mode } = useDisplayMode();
+  const isTv = mode === 'tv';
   const [favorited, setFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -229,7 +234,7 @@ export default function VideoCard({
   const config = useMemo(() => {
     const configs = {
       playrecord: {
-        showSourceName: true,
+        showSourceName: false,
         showProgress: true,
         showPlayButton: true,
         showHeart: true,
@@ -371,37 +376,76 @@ export default function VideoCard({
             </div>
           </a>
         )}
+
+        {/* 进度条（置于海报内底部，不撑高卡片） */}
+        {config.showProgress && progress !== undefined && (
+          <div className='absolute bottom-0 left-0 right-0 h-1 bg-black/40 overflow-hidden'>
+            <div
+              className='h-full bg-green-500 transition-all duration-500 ease-out'
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
       </div>
 
-      {/* 进度条 */}
-      {config.showProgress && progress !== undefined && (
-        <div className='mt-1 h-1 w-full bg-gray-200 rounded-full overflow-hidden'>
-          <div
-            className='h-full bg-green-500 transition-all duration-500 ease-out'
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
-
       {/* 标题与来源 */}
-      <div className='mt-2 text-center'>
+      <div className={`text-center ${isTv ? 'mt-1' : 'mt-1.5'}`}>
         <div className='relative'>
-          <span className='block text-sm font-semibold truncate text-gray-900 dark:text-gray-100 transition-colors duration-300 ease-in-out group-hover:text-green-600 dark:group-hover:text-green-400 peer'>
+          <span
+            className={`block font-semibold truncate text-gray-900 dark:text-gray-100 transition-colors duration-300 ease-in-out group-hover:text-green-600 dark:group-hover:text-green-400 peer ${
+              isTv ? 'text-[11px] leading-tight' : 'text-xs sm:text-sm'
+            }`}
+          >
             {actualTitle}
           </span>
           {/* 自定义 tooltip */}
-          <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 whitespace-nowrap pointer-events-none'>
+          <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible peer-hover:opacity-100 peer-hover:visible transition-all duration-200 ease-out delay-100 whitespace-nowrap pointer-events-none'>
             {actualTitle}
             <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800'></div>
           </div>
         </div>
-        {config.showSourceName && source_name && (
-          <span className='block text-xs text-gray-500 dark:text-gray-400 mt-1'>
-            <span className='inline-block border rounded px-2 py-0.5 border-gray-500/60 dark:border-gray-400/60 transition-all duration-300 ease-in-out group-hover:border-green-500/60 group-hover:text-green-600 dark:group-hover:text-green-400'>
-              {source_name}
+        {/* 来源、年份与地区 */}
+        <div
+          className={`flex items-center justify-center gap-1 flex-wrap ${
+            isTv ? 'mt-0.5' : 'mt-1'
+          }`}
+        >
+          {actualYear && actualYear !== 'unknown' && (
+            <span
+              className={`inline-block font-medium rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 border border-gray-200/60 dark:border-gray-700/60 ${
+                isTv
+                  ? 'text-[9px] px-1 py-0'
+                  : 'text-[10px] sm:text-[11px] px-1.5 py-0.5'
+              }`}
+            >
+              {actualYear}
             </span>
-          </span>
-        )}
+          )}
+          {area && (
+            <span
+              className={`inline-block font-medium rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 ${
+                isTv
+                  ? 'text-[9px] px-1 py-0'
+                  : 'text-[10px] sm:text-[11px] px-1.5 py-0.5'
+              }`}
+            >
+              {area}
+            </span>
+          )}
+          {config.showSourceName && source_name && (
+            <span className='inline-block text-gray-500 dark:text-gray-400'>
+              <span
+                className={`inline-block border rounded border-gray-500/60 dark:border-gray-400/60 transition-all duration-300 ease-in-out group-hover:border-green-500/60 group-hover:text-green-600 dark:group-hover:text-green-400 ${
+                  isTv
+                    ? 'text-[9px] px-1 py-0'
+                    : 'text-[10px] sm:text-xs px-1.5 py-0.5'
+                }`}
+              >
+                {source_name}
+              </span>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

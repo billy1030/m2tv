@@ -18,6 +18,7 @@ import { DoubanItem } from '@/lib/types';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
 import ContinueWatching from '@/components/ContinueWatching';
+import { useDisplayMode } from '@/components/DisplayModeContext';
 import PageLayout from '@/components/PageLayout';
 import ScrollableRow from '@/components/ScrollableRow';
 import { useSite } from '@/components/SiteProvider';
@@ -154,32 +155,44 @@ function HomeClient() {
     localStorage.setItem('hasSeenAnnouncement', announcement); // 记录已查看弹窗
   };
 
+  const { mode, gridClass } = useDisplayMode();
+
+  // 电视模式卡片宽度縮小一半（約 95px），一般模式維持 180px
+  const itemWidthClass =
+    mode === 'tv'
+      ? 'min-w-[90px] w-24 sm:min-w-[95px] sm:w-28'
+      : 'min-w-[96px] w-24 sm:min-w-[180px] sm:w-44';
+
   return (
     <PageLayout>
-      <div className='px-2 sm:px-10 py-4 sm:py-8 overflow-visible'>
-        {/* 顶部 Tab 切换 */}
-        <div className='mb-8 flex justify-center'>
-          <CapsuleSwitch
-            options={[
-              { label: '首页', value: 'home' },
-              { label: '收藏夹', value: 'favorites' },
-            ]}
-            active={activeTab}
-            onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
-          />
-        </div>
+      <div
+        className={`px-2 sm:px-6 py-2 sm:py-4 overflow-visible ${
+          mode === 'tv' ? 'max-w-none' : ''
+        }`}
+      >
+        <div className={`mx-auto ${mode === 'tv' ? 'w-full' : 'max-w-[95%]'}`}>
+          {/* 顶部 Tab 切换（与下方各分类标题严格保持同一左侧垂线） */}
+          <div className='mb-3 flex justify-start'>
+            <CapsuleSwitch
+              options={[
+                { label: '首頁', value: 'home' },
+                { label: '收藏夾', value: 'favorites' },
+              ]}
+              active={activeTab}
+              onChange={(value) => setActiveTab(value as 'home' | 'favorites')}
+            />
+          </div>
 
-        <div className='max-w-[95%] mx-auto'>
           {activeTab === 'favorites' ? (
             // 收藏夹视图
-            <section className='mb-8'>
-              <div className='mb-4 flex items-center justify-between'>
-                <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
+            <section className='mb-4'>
+              <div className='mb-2 flex items-center justify-between'>
+                <h2 className='text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200'>
                   我的收藏
                 </h2>
                 {favoriteItems.length > 0 && (
                   <button
-                    className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    className='text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                     onClick={async () => {
                       await clearAllFavorites();
                       setFavoriteItems([]);
@@ -189,7 +202,7 @@ function HomeClient() {
                   </button>
                 )}
               </div>
-              <div className='justify-start grid grid-cols-3 gap-x-2 gap-y-14 sm:gap-y-20 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,_minmax(11rem,_1fr))] sm:gap-x-8'>
+              <div className={`justify-start ${gridClass}`}>
                 {favoriteItems.map((item) => (
                   <div key={item.id + item.source} className='w-full'>
                     <VideoCard
@@ -201,8 +214,8 @@ function HomeClient() {
                   </div>
                 ))}
                 {favoriteItems.length === 0 && (
-                  <div className='col-span-full text-center text-gray-500 py-8 dark:text-gray-400'>
-                    暂无收藏内容
+                  <div className='col-span-full text-center text-gray-500 py-6 dark:text-gray-400 text-xs'>
+                    暫無收藏內容
                   </div>
                 )}
               </div>
@@ -214,27 +227,24 @@ function HomeClient() {
               <ContinueWatching />
 
               {/* 热门电影 */}
-              <section className='mb-8'>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                    热门电影
+              <section className='mb-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <h2 className='text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200'>
+                    熱門電影
                   </h2>
                   <Link
                     href='/db?type=movie'
-                    className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    className='flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多
-                    <ChevronRight className='w-4 h-4 ml-1' />
+                    <ChevronRight className='w-3.5 h-3.5 ml-0.5' />
                   </Link>
                 </div>
                 <ScrollableRow>
                   {loading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
                             <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
                           </div>
@@ -243,10 +253,7 @@ function HomeClient() {
                       ))
                     : // 显示真实数据
                       hotMovies.map((movie, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <VideoCard
                             from='douban'
                             title={movie.title}
@@ -262,27 +269,24 @@ function HomeClient() {
               </section>
 
               {/* 热门剧集 */}
-              <section className='mb-8'>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                    热门剧集
+              <section className='mb-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <h2 className='text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200'>
+                    熱門劇集
                   </h2>
                   <Link
                     href='/db?type=tv'
-                    className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    className='flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多
-                    <ChevronRight className='w-4 h-4 ml-1' />
+                    <ChevronRight className='w-3.5 h-3.5 ml-0.5' />
                   </Link>
                 </div>
                 <ScrollableRow>
                   {loading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
                             <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
                           </div>
@@ -291,10 +295,7 @@ function HomeClient() {
                       ))
                     : // 显示真实数据
                       hotTvShows.map((show, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <VideoCard
                             from='douban'
                             title={show.title}
@@ -309,27 +310,24 @@ function HomeClient() {
               </section>
 
               {/* 热门综艺 */}
-              <section className='mb-8'>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-                    热门综艺
+              <section className='mb-4'>
+                <div className='mb-2 flex items-center justify-between'>
+                  <h2 className='text-base sm:text-lg font-bold text-gray-800 dark:text-gray-200'>
+                    熱門綜藝
                   </h2>
                   <Link
                     href='/db?type=show'
-                    className='flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                    className='flex items-center text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                   >
                     查看更多
-                    <ChevronRight className='w-4 h-4 ml-1' />
+                    <ChevronRight className='w-3.5 h-3.5 ml-0.5' />
                   </Link>
                 </div>
                 <ScrollableRow>
                   {loading
                     ? // 加载状态显示灰色占位数据
                       Array.from({ length: 8 }).map((_, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
                             <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
                           </div>
@@ -338,10 +336,7 @@ function HomeClient() {
                       ))
                     : // 显示真实数据
                       hotVarietyShows.map((show, index) => (
-                        <div
-                          key={index}
-                          className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
-                        >
+                        <div key={index} className={itemWidthClass}>
                           <VideoCard
                             from='douban'
                             title={show.title}
@@ -372,7 +367,7 @@ function HomeClient() {
               <button
                 onClick={() => handleCloseAnnouncement(announcement)}
                 className='text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-white transition-colors'
-                aria-label='关闭'
+                aria-label='關閉'
               ></button>
             </div>
             <div className='mb-6'>
