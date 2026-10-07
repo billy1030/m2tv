@@ -501,10 +501,10 @@ export async function GET(request: Request) {
       }
     }
 
-    const aggregatedList = Array.from(aggMap.values()).slice(
-      0,
-      TARGET_ITEMS_PER_BATCH
-    );
+    const yearNum = (y: string) => parseInt(y, 10) || 0;
+    const aggregatedList = Array.from(aggMap.values())
+      .sort((a, b) => yearNum(b.year) - yearNum(a.year))
+      .slice(0, TARGET_ITEMS_PER_BATCH);
 
     const result = {
       code: 200,
@@ -514,6 +514,13 @@ export async function GET(request: Request) {
       total: maxTotal,
       list: aggregatedList,
     };
+
+    // 空结果（上游超时/失败）不缓存，避免筛选长期显示「暂无片源」
+    if (aggregatedList.length === 0) {
+      return NextResponse.json(result, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
 
     const cacheTime = await getCacheTime();
     return NextResponse.json(result, {

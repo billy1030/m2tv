@@ -129,6 +129,7 @@ function LibraryPageClient() {
 
         const params = new URLSearchParams();
         params.set('batch', String(targetBatch));
+        params.set('v', '2');
         if (selectedYear) params.set('year', selectedYear);
 
         // 如果在短剧模式下，根据选中的题材分类请求
