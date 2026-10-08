@@ -272,10 +272,11 @@ function LibraryPageClient() {
           <button
             type='button'
             onClick={() => setIsStatsOpen(true)}
-            className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60 transition-all shadow-sm'
+            title='片庫真實數據統計 (10,000部)'
+            aria-label='片庫真實數據統計 (10,000部)'
+            className='inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60 transition-all shadow-sm hover:scale-105 active:scale-95'
           >
-            <BarChart3 className='w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400' />
-            <span>片庫真實數據統計 (10,000部)</span>
+            <BarChart3 className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
           </button>
         </div>
 
