@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps, @typescript-eslint/no-explicit-any, no-console */
 'use client';
 
-import { Clapperboard, Film, Flame, Sparkles, Tv, Video } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import React, {
   Suspense,
@@ -13,6 +13,7 @@ import React, {
 
 import DoubanCardSkeleton from '@/components/DbCardSkeleton';
 import { useDisplayMode } from '@/components/DisplayModeContext';
+import LibraryStatsModal from '@/components/LibraryStatsModal';
 import PageLayout from '@/components/PageLayout';
 import VideoCard from '@/components/VideoCard';
 
@@ -30,56 +31,68 @@ interface VodItem {
   sources?: string[];
 }
 
-const YEAR_OPTIONS = [
-  { label: '全部年份', value: '' },
-  { label: '2026', value: '2026' },
-  { label: '2025', value: '2025' },
-  { label: '2024', value: '2024' },
-  { label: '2023', value: '2023' },
-  { label: '2022', value: '2022' },
-  { label: '2021', value: '2021' },
-  { label: '2020', value: '2020' },
-  { label: '2020年前', value: 'earlier' },
-];
+import libraryOptionsData from '@/lib/libraryOptions.json';
 
-// 纯以「时间 + 真正片种类形」分类，不以节点分类
-const CATEGORY_TABS = [
-  { label: '全部類型', value: '', icon: Clapperboard },
-  { label: '短劇', value: 'duanju', icon: Flame },
-  { label: '動作片', value: 'action', icon: Film },
-  { label: '喜劇片', value: 'comedy', icon: Sparkles },
-  { label: '愛情片', value: 'romance', icon: Sparkles },
-  { label: '科幻片', value: 'scifi', icon: Sparkles },
-  { label: '懸疑 / 犯罪', value: 'suspense', icon: Film },
-  { label: '武俠古裝', value: 'wuxia', icon: Film },
-  { label: '驚悚 / 恐怖', value: 'horror', icon: Film },
-  { label: '戰爭片', value: 'war', icon: Film },
-  { label: '紀錄片', value: 'doc', icon: Video },
-  { label: '電視劇', value: 'tv', icon: Tv },
-  { label: '動漫', value: 'anime', icon: Sparkles },
-  { label: '綜藝', value: 'variety', icon: Video },
-];
+interface FilterOption {
+  label: string;
+  value: string;
+}
 
-// 短剧细分题材
-const DUANJU_THEME_OPTIONS = [
-  { label: '全部題材', value: 'duanju' },
-  { label: '現代都市', value: 'duanju_modern' },
-  { label: '言情總裁', value: 'duanju_ceo' },
-  { label: '年代穿越', value: 'duanju_time' },
-  { label: '重生民國', value: 'duanju_rebirth' },
-  { label: 'AI漫劇', value: 'duanju_ai' },
-  { label: '反轉逆襲', value: 'duanju_twist' },
-];
-
-// 地区分类：简化直接使用纯粹分类
-const AREA_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '日本', value: 'jp' },
-  { label: '大陆', value: 'cn' },
-  { label: '台湾', value: 'tw' },
-  { label: '美国', value: 'us' },
-  { label: '海外', value: 'overseas' },
-];
+const DEFAULT_OPTIONS: {
+  areas: FilterOption[];
+  types: FilterOption[];
+  years: FilterOption[];
+} = {
+  areas: [
+    { label: '全部地區', value: '' },
+    { label: '中国大陆', value: '中国大陆' },
+    { label: '大陆', value: '大陆' },
+    { label: '日本', value: '日本' },
+    { label: '美国', value: '美国' },
+    { label: '内地', value: '内地' },
+    { label: '韩国', value: '韩国' },
+    { label: '英国', value: '英国' },
+    { label: '泰国', value: '泰国' },
+    { label: '台湾', value: '台湾' },
+    {
+      label: '其他',
+      value: '__other__:中国大陆,大陆,日本,美国,内地,韩国,英国,泰国,台湾',
+    },
+  ],
+  types: [
+    { label: '全部類型', value: '' },
+    { label: 'AI漫剧', value: 'AI漫剧' },
+    { label: '爽文短剧', value: '爽文短剧' },
+    { label: '国产动漫', value: '国产动漫' },
+    { label: '国产剧', value: '国产剧' },
+    { label: '漫剧', value: '漫剧' },
+    { label: 'AI短剧', value: 'AI短剧' },
+    { label: '足球', value: '足球' },
+    { label: '短剧', value: '短剧' },
+    { label: '现代都市', value: '现代都市' },
+    {
+      label: '其他',
+      value:
+        '__other__:AI漫剧,爽文短剧,国产动漫,国产剧,漫剧,AI短剧,足球,短剧,现代都市',
+    },
+  ],
+  years: [
+    { label: '全部年份', value: '' },
+    { label: '2026', value: '2026' },
+    { label: '2025', value: '2025' },
+    { label: '2024', value: '2024' },
+    { label: '2023', value: '2023' },
+    { label: '2022', value: '2022' },
+    { label: '2021', value: '2021' },
+    { label: '2020', value: '2020' },
+    { label: '2019', value: '2019' },
+    { label: '2018', value: '2018' },
+    {
+      label: '其他',
+      value: '__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018',
+    },
+  ],
+};
 
 function LibraryPageClient() {
   const searchParams = useSearchParams();
@@ -93,6 +106,7 @@ function LibraryPageClient() {
   const [selectedArea, setSelectedArea] = useState<string>(areaParam);
   const [selectedDuanjuTheme, setSelectedDuanjuTheme] =
     useState<string>('duanju');
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const isDuanjuMode =
     selectedCategory === 'duanju' ||
@@ -139,7 +153,7 @@ function LibraryPageClient() {
           params.set('type', selectedCategory);
         }
 
-        if (selectedArea && !isDuanjuMode) params.set('area', selectedArea);
+        if (selectedArea) params.set('area', selectedArea);
 
         const res = await fetch(`/api/vod/list?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch library data');
@@ -224,10 +238,19 @@ function LibraryPageClient() {
       ? '綜藝精選直連'
       : '片庫聚合直連';
 
-  // 当从 sidebar 点击具体类型进入时，类型已预先选上，无需重复显示类型筛选条
-  const isTypeLocked = Boolean(typeParam);
-
+  // 映射当前 4~9 的导航路径，获取对应的 10 项精准筛选配置
   const activePath = typeParam ? `/library?type=${typeParam}` : '/library';
+  const currentFilters =
+    (
+      libraryOptionsData as Record<
+        string,
+        {
+          areas: FilterOption[];
+          types: FilterOption[];
+          years: FilterOption[];
+        }
+      >
+    )[activePath] || DEFAULT_OPTIONS;
 
   return (
     <PageLayout activePath={activePath}>
@@ -246,143 +269,224 @@ function LibraryPageClient() {
               已載入 {items.length} / 逾 {totalCount.toLocaleString()} 部
             </span>
           )}
+          <button
+            type='button'
+            onClick={() => setIsStatsOpen(true)}
+            className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60 transition-all shadow-sm'
+          >
+            <BarChart3 className='w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400' />
+            <span>片庫真實數據統計 (10,000部)</span>
+          </button>
         </div>
 
-        {/* 筛选面板：緊湊無 Icon 壓縮排版 */}
-        <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-2.5 border border-gray-200/30 dark:border-gray-700/30 space-y-1.5 backdrop-blur-sm'>
-          {/* 1. 類型 / 片種（若在短劇或動漫專頁，則已內定類型，不需要再顯示此條 bar；明確劃分為兩行） */}
-          {!isTypeLocked && (
+        {/* 筛选面板：
+            - 普通模式：横向滚动条
+            - 电视模式 (mode === 'tv')：共 12 个资料（全部 + 10个具体选项 + 其他），每个类别拆成 2 行显示，每行 6 个按钮，类型+地区+年份共 6 行，极其方便遥控器直观操控 */}
+        <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-2.5 border border-gray-200/30 dark:border-gray-700/30 space-y-2 backdrop-blur-sm'>
+          {/* 1. 片種 / 類型篩選 */}
+          {currentFilters.types && currentFilters.types.length > 1 && (
             <div className='space-y-1.5'>
-              {/* 第一行 */}
-              <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide'>
-                <span className='text-[11px] text-gray-400 dark:text-gray-500 font-medium shrink-0'>
-                  類型:
-                </span>
-                {CATEGORY_TABS.slice(0, 7).map((tab) => {
-                  const active = selectedCategory === tab.value;
-                  return (
-                    <button
-                      key={tab.value}
-                      type='button'
-                      onClick={() => setSelectedCategory(tab.value)}
-                      className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                        active
-                          ? 'bg-green-600 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
+              {mode === 'tv' ? (
+                // 电视模式：拆成 2 行，每行 6 个
+                [0, 1].map((rowIdx) => {
+                  const rowItems = currentFilters.types.slice(
+                    rowIdx * 6,
+                    (rowIdx + 1) * 6
                   );
-                })}
-              </div>
-              {/* 第二行 */}
-              <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide pl-7 sm:pl-8'>
-                {CATEGORY_TABS.slice(7).map((tab) => {
-                  const active = selectedCategory === tab.value;
+                  if (rowItems.length === 0) return null;
                   return (
-                    <button
-                      key={tab.value}
-                      type='button'
-                      onClick={() => setSelectedCategory(tab.value)}
-                      className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                        active
-                          ? 'bg-green-600 text-white shadow-sm'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                      }`}
+                    <div
+                      key={`type-row-${rowIdx}`}
+                      className='flex items-center gap-2'
                     >
-                      {tab.label}
-                    </button>
+                      <span className='text-[12px] text-gray-400 dark:text-gray-500 font-semibold w-12 shrink-0'>
+                        {rowIdx === 0 ? '類型:' : ''}
+                      </span>
+                      <div className='grid grid-cols-6 gap-2 flex-1'>
+                        {rowItems.map((tab) => {
+                          const active = selectedCategory === tab.value;
+                          return (
+                            <button
+                              key={tab.value || 'all-type'}
+                              type='button'
+                              onClick={() => setSelectedCategory(tab.value)}
+                              className={`text-xs py-1.5 px-2 rounded-lg transition-all font-medium text-center truncate ${
+                                active
+                                  ? 'bg-green-600 text-white shadow-md ring-2 ring-green-400'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {tab.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
-                })}
-              </div>
+                })
+              ) : (
+                // 普通桌面 / 移动端：单行横向滚动
+                <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5'>
+                  <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0'>
+                    類型:
+                  </span>
+                  {currentFilters.types.map((tab) => {
+                    const active = selectedCategory === tab.value;
+                    return (
+                      <button
+                        key={tab.value || 'all-type'}
+                        type='button'
+                        onClick={() => setSelectedCategory(tab.value)}
+                        className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
+                          active
+                            ? 'bg-green-600 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
-          {/* 2. 時間年份（分為兩行：第一行個別近年年份，第二行年代區間） */}
-          <div className='space-y-1.5'>
-            {/* 年份第一行：全部年份 + 2026 ~ 2020 */}
-            <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide'>
-              <span className='text-[11px] text-gray-400 dark:text-gray-500 font-medium shrink-0'>
-                年份:
-              </span>
-              {YEAR_OPTIONS.slice(0, 8).map((y) => (
-                <button
-                  key={y.value}
-                  type='button'
-                  onClick={() => setSelectedYear(y.value)}
-                  className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                    selectedYear === y.value
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {y.label}
-                </button>
-              ))}
+          {/* 2. 國家 / 地區篩選 */}
+          {currentFilters.areas && currentFilters.areas.length > 1 && (
+            <div className='space-y-1.5'>
+              {mode === 'tv' ? (
+                // 电视模式：拆成 2 行，每行 6 个
+                [0, 1].map((rowIdx) => {
+                  const rowItems = currentFilters.areas.slice(
+                    rowIdx * 6,
+                    (rowIdx + 1) * 6
+                  );
+                  if (rowItems.length === 0) return null;
+                  return (
+                    <div
+                      key={`area-row-${rowIdx}`}
+                      className='flex items-center gap-2'
+                    >
+                      <span className='text-[12px] text-gray-400 dark:text-gray-500 font-semibold w-12 shrink-0'>
+                        {rowIdx === 0 ? '地區:' : ''}
+                      </span>
+                      <div className='grid grid-cols-6 gap-2 flex-1'>
+                        {rowItems.map((a) => {
+                          const active = selectedArea === a.value;
+                          return (
+                            <button
+                              key={a.value || 'all-area'}
+                              type='button'
+                              onClick={() => setSelectedArea(a.value)}
+                              className={`text-xs py-1.5 px-2 rounded-lg transition-all font-medium text-center truncate ${
+                                active
+                                  ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-400'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {a.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                // 普通桌面 / 移动端：单行横向滚动
+                <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5'>
+                  <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0'>
+                    地區:
+                  </span>
+                  {currentFilters.areas.map((a) => {
+                    const active = selectedArea === a.value;
+                    return (
+                      <button
+                        key={a.value || 'all-area'}
+                        type='button'
+                        onClick={() => setSelectedArea(a.value)}
+                        className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
+                          active
+                            ? 'bg-purple-600 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            {/* 年份第二行：2019~2015、2015~2010 及更早 */}
-            <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide pl-7 sm:pl-8'>
-              {YEAR_OPTIONS.slice(8).map((y) => (
-                <button
-                  key={y.value}
-                  type='button'
-                  onClick={() => setSelectedYear(y.value)}
-                  className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                    selectedYear === y.value
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {y.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
-          {/* 3. 題材 / 地區篩選：若處於短劇模式，動態呈現短劇題材子分類；非短劇時呈現地區篩選 */}
-          {isDuanjuMode ? (
-            <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide'>
-              <span className='text-[11px] text-gray-400 dark:text-gray-500 font-medium shrink-0'>
-                題材:
-              </span>
-              {DUANJU_THEME_OPTIONS.map((theme) => {
-                const active = selectedDuanjuTheme === theme.value;
-                return (
-                  <button
-                    key={theme.value}
-                    type='button'
-                    onClick={() => setSelectedDuanjuTheme(theme.value)}
-                    className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                      active
-                        ? 'bg-amber-600 text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                    }`}
-                  >
-                    {theme.label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide'>
-              <span className='text-[11px] text-gray-400 dark:text-gray-500 font-medium shrink-0'>
-                地區:
-              </span>
-              {AREA_OPTIONS.map((a) => (
-                <button
-                  key={a.value}
-                  type='button'
-                  onClick={() => setSelectedArea(a.value)}
-                  className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
-                    selectedArea === a.value
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {a.label}
-                </button>
-              ))}
+          {/* 3. 上映年份 / 時間篩選 */}
+          {currentFilters.years && currentFilters.years.length > 1 && (
+            <div className='space-y-1.5'>
+              {mode === 'tv' ? (
+                // 电视模式：拆成 2 行，每行 6 个
+                [0, 1].map((rowIdx) => {
+                  const rowItems = currentFilters.years.slice(
+                    rowIdx * 6,
+                    (rowIdx + 1) * 6
+                  );
+                  if (rowItems.length === 0) return null;
+                  return (
+                    <div
+                      key={`year-row-${rowIdx}`}
+                      className='flex items-center gap-2'
+                    >
+                      <span className='text-[12px] text-gray-400 dark:text-gray-500 font-semibold w-12 shrink-0'>
+                        {rowIdx === 0 ? '時間:' : ''}
+                      </span>
+                      <div className='grid grid-cols-6 gap-2 flex-1'>
+                        {rowItems.map((y) => {
+                          const active = selectedYear === y.value;
+                          return (
+                            <button
+                              key={y.value || 'all-year'}
+                              type='button'
+                              onClick={() => setSelectedYear(y.value)}
+                              className={`text-xs py-1.5 px-2 rounded-lg transition-all font-medium text-center truncate ${
+                                active
+                                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                              }`}
+                            >
+                              {y.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                // 普通桌面 / 移动端：单行横向滚动
+                <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5'>
+                  <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0'>
+                    年份:
+                  </span>
+                  {currentFilters.years.map((y) => {
+                    const active = selectedYear === y.value;
+                    return (
+                      <button
+                        key={y.value || 'all-year'}
+                        type='button'
+                        onClick={() => setSelectedYear(y.value)}
+                        className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
+                          active
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {y.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -446,6 +550,12 @@ function LibraryPageClient() {
           )}
         </div>
       </div>
+
+      {/* 獨立數據統計分析彈窗 (支援 1,000 部真實資料抽取與點擊索取) */}
+      <LibraryStatsModal
+        isOpen={isStatsOpen}
+        onClose={() => setIsStatsOpen(false)}
+      />
     </PageLayout>
   );
 }

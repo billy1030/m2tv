@@ -437,27 +437,58 @@ export async function GET(request: Request) {
       // 1. 过滤敏感词
       if (yellowWords.some((w: string) => typeName.includes(w))) continue;
 
-      // 2. 类型筛选
-      if (genreKey && GENRE_MAP[genreKey]) {
-        const allowedWords = GENRE_MAP[genreKey];
-        const matched = allowedWords.some((w) => typeName.includes(w));
-        if (!matched) continue;
+      // 2. 类型筛选 (支持预设类别、具体原生标签、以及「其他」——包括空白未填)
+      if (genreKey) {
+        if (genreKey.startsWith('__other__:')) {
+          const excludeList = genreKey.replace('__other__:', '').split(',');
+          // 空白未填视为「其他」；若有值且属于前排排除项，则排除
+          if (typeName && excludeList.some((ex) => typeName.includes(ex))) {
+            continue;
+          }
+        } else if (GENRE_MAP[genreKey]) {
+          const allowedWords = GENRE_MAP[genreKey];
+          const matched = allowedWords.some((w) => typeName.includes(w));
+          if (!matched) continue;
+        } else {
+          // 精确匹配采集站原生标签 (例如: '电影解说', 'AI漫剧', '国产动漫' 等)
+          if (!typeName.includes(genreKey)) continue;
+        }
       }
 
-      // 3. 地区筛选
-      if (areaKey && AREA_MAP[areaKey]) {
-        const allowedAreas = AREA_MAP[areaKey];
-        const matchedArea = allowedAreas.some(
-          (a) => vodArea.includes(a) || typeName.includes(a)
-        );
-        if (!matchedArea) continue;
+      // 3. 地区筛选 (支持预设大区代码、具体原生标签、以及「其他」——包括空白未填)
+      if (areaKey) {
+        if (areaKey.startsWith('__other__:')) {
+          const excludeList = areaKey.replace('__other__:', '').split(',');
+          // 空白未填视为「其他」；若有值且属于前排排除项，则排除
+          if (vodArea && excludeList.some((ex) => vodArea.includes(ex))) {
+            continue;
+          }
+        } else if (AREA_MAP[areaKey]) {
+          const allowedAreas = AREA_MAP[areaKey];
+          const matchedArea = allowedAreas.some(
+            (a) => vodArea.includes(a) || typeName.includes(a)
+          );
+          if (!matchedArea) continue;
+        } else {
+          // 精确匹配采集站原生标签 (例如: '美国', '中国大陆', '日本' 等)
+          if (!vodArea.includes(areaKey)) continue;
+        }
       }
 
-      // 4. 年份范围筛选
+      // 4. 年份范围筛选 (支持具体年份、区间、以及「其他」——包括空白未填或0)
       const rawYearStr = item.vod_year || '';
       const numYear = parseInt(rawYearStr.match(/\d{4}/)?.[0] || '0', 10);
       if (year) {
-        if (year === 'earlier') {
+        if (year.startsWith('__other__:')) {
+          const excludeList = year.replace('__other__:', '').split(',');
+          // 空白未填或0视为「其他」；若有年份且属于前排名单，则排除
+          if (
+            numYear > 0 &&
+            excludeList.some((ex) => rawYearStr.includes(ex))
+          ) {
+            continue;
+          }
+        } else if (year === 'earlier') {
           // 2020 年之前
           if (!numYear || numYear >= 2020) continue;
         } else if (year.includes('-')) {
