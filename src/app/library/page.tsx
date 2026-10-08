@@ -100,8 +100,12 @@ function LibraryPageClient() {
   const yearParam = searchParams.get('year') || '';
   const areaParam = searchParams.get('area') || '';
 
+  // 默认当前年份 (例如 2026)，全部类型 ('')，全部地区 ('')
+  const currentYearStr = String(new Date().getFullYear());
+  const initialYear = yearParam || currentYearStr;
+
   const [items, setItems] = useState<VodItem[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string>(yearParam);
+  const [selectedYear, setSelectedYear] = useState<string>(initialYear);
   const [selectedCategory, setSelectedCategory] = useState<string>(typeParam);
   const [selectedArea, setSelectedArea] = useState<string>(areaParam);
   const [selectedDuanjuTheme, setSelectedDuanjuTheme] =
@@ -116,10 +120,10 @@ function LibraryPageClient() {
   // 当 URL searchParams 改变时（例如从側邊欄「短劇」跳到「動漫」或「片庫直連」）同步更新狀態
   useEffect(() => {
     setSelectedCategory(typeParam);
-    setSelectedYear(yearParam);
+    setSelectedYear(yearParam || currentYearStr);
     setSelectedArea(areaParam);
     setSelectedDuanjuTheme('duanju');
-  }, [typeParam, yearParam, areaParam]);
+  }, [typeParam, yearParam, areaParam, currentYearStr]);
 
   // batch 代表第几批（每批 100 部）
   const [batch, setBatch] = useState<number>(1);
