@@ -6,48 +6,44 @@
         "value": ""
       },
       {
-        "label": "美国",
-        "value": "美国"
+        "label": "中國大陸",
+        "value": "cn"
       },
       {
-        "label": "大陆",
-        "value": "大陆"
+        "label": "美國",
+        "value": "us"
+      },
+      {
+        "label": "中國香港",
+        "value": "hk"
+      },
+      {
+        "label": "中國台灣",
+        "value": "tw"
       },
       {
         "label": "日本",
-        "value": "日本"
+        "value": "jp"
       },
       {
-        "label": "中国大陆",
-        "value": "中国大陆"
+        "label": "韓國",
+        "value": "kr"
       },
       {
-        "label": "英国",
-        "value": "英国"
+        "label": "英國",
+        "value": "uk"
       },
       {
-        "label": "韩国",
-        "value": "韩国"
-      },
-      {
-        "label": "其它",
-        "value": "其它"
+        "label": "法國",
+        "value": "france"
       },
       {
         "label": "印度",
-        "value": "印度"
+        "value": "india"
       },
       {
-        "label": "苏联",
-        "value": "苏联"
-      },
-      {
-        "label": "法国",
-        "value": "法国"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:美国,大陆,日本,中国大陆,英国,韩国,其它,印度,苏联,法国"
+        "label": "海外其他",
+        "value": "overseas"
       }
     ],
     "types": [
@@ -56,48 +52,48 @@
         "value": ""
       },
       {
-        "label": "电影解说",
-        "value": "电影解说"
+        "label": "動作片",
+        "value": "action"
       },
       {
-        "label": "剧情片",
-        "value": "剧情片"
+        "label": "喜劇片",
+        "value": "comedy"
       },
       {
-        "label": "恐怖片",
-        "value": "恐怖片"
-      },
-      {
-        "label": "动作片",
-        "value": "动作片"
-      },
-      {
-        "label": "喜剧片",
-        "value": "喜剧片"
-      },
-      {
-        "label": "爱情片",
-        "value": "爱情片"
-      },
-      {
-        "label": "纪录片",
-        "value": "纪录片"
-      },
-      {
-        "label": "战争片",
-        "value": "战争片"
+        "label": "愛情片",
+        "value": "romance"
       },
       {
         "label": "科幻片",
-        "value": "科幻片"
+        "value": "scifi"
       },
       {
-        "label": "动漫电影",
-        "value": "动漫电影"
+        "label": "恐怖片",
+        "value": "horror"
+      },
+      {
+        "label": "劇情片",
+        "value": "drama"
+      },
+      {
+        "label": "戰爭片",
+        "value": "war"
+      },
+      {
+        "label": "懸疑罪案",
+        "value": "suspense"
+      },
+      {
+        "label": "紀錄片",
+        "value": "doc"
+      },
+      {
+        "label": "動漫電影",
+        "value": "anime"
       },
       {
         "label": "其他",
-        "value": "__other__:电影解说,剧情片,恐怖片,动作片,喜剧片,爱情片,纪录片,战争片,科幻片,动漫电影"
+        "value": "__other__:动作片,喜剧片,爱情片,科幻片,恐怖片,剧情片,战争片,悬疑片,纪录片,动漫电影"
       }
     ],
     "years": [
@@ -142,12 +138,8 @@
         "value": "2018"
       },
       {
-        "label": "2017",
-        "value": "2017"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
+        "label": "更早",
+        "value": "earlier"
       }
     ]
   },
@@ -158,48 +150,44 @@
         "value": ""
       },
       {
-        "label": "中国大陆",
-        "value": "中国大陆"
+        "label": "中國大陸",
+        "value": "cn"
       },
       {
-        "label": "美国",
-        "value": "美国"
+        "label": "美國",
+        "value": "us"
       },
       {
-        "label": "大陆",
-        "value": "大陆"
+        "label": "中國香港",
+        "value": "hk"
       },
       {
-        "label": "英国",
-        "value": "英国"
-      },
-      {
-        "label": "韩国",
-        "value": "韩国"
-      },
-      {
-        "label": "泰国",
-        "value": "泰国"
-      },
-      {
-        "label": "其它",
-        "value": "其它"
+        "label": "中國台灣",
+        "value": "tw"
       },
       {
         "label": "日本",
-        "value": "日本"
+        "value": "jp"
       },
       {
-        "label": "中国香港",
-        "value": "中国香港"
+        "label": "韓國",
+        "value": "kr"
       },
       {
-        "label": "香港",
-        "value": "香港"
+        "label": "泰國",
+        "value": "th"
       },
       {
-        "label": "其他",
-        "value": "__other__:中国大陆,美国,大陆,英国,韩国,泰国,其它,日本,中国香港,香港"
+        "label": "英國",
+        "value": "uk"
+      },
+      {
+        "label": "加拿大",
+        "value": "canada"
+      },
+      {
+        "label": "海外其他",
+        "value": "overseas"
       }
     ],
     "types": [
@@ -208,36 +196,44 @@
         "value": ""
       },
       {
-        "label": "国产剧",
-        "value": "国产剧"
+        "label": "國產劇",
+        "value": "tv_cn"
       },
       {
-        "label": "欧美剧",
-        "value": "欧美剧"
+        "label": "歐美劇",
+        "value": "tv_us"
       },
       {
-        "label": "韩国剧",
-        "value": "韩国剧"
+        "label": "香港劇",
+        "value": "tv_hk"
       },
       {
-        "label": "泰剧",
-        "value": "泰剧"
+        "label": "台灣劇",
+        "value": "tw"
       },
       {
-        "label": "香港剧",
-        "value": "香港剧"
+        "label": "日劇",
+        "value": "tv_jp"
       },
       {
-        "label": "日剧",
-        "value": "日剧"
+        "label": "韓劇",
+        "value": "tv_kr"
       },
       {
-        "label": "韩剧",
-        "value": "韩剧"
+        "label": "泰劇",
+        "value": "tv_th"
       },
       {
-        "label": "港剧",
-        "value": "港剧"
+        "label": "海外劇",
+        "value": "tv_overseas"
+      },
+      {
+        "label": "短劇爽劇",
+        "value": "duanju"
+      },
+      {
+        "label": "其他",
+        "value": "__other__:国产剧,欧美剧,香港剧,台湾剧,日剧,日本剧,韩剧,韩国剧,泰剧,泰国剧,海外剧"
       }
     ],
     "years": [
@@ -282,268 +278,8 @@
         "value": "2018"
       },
       {
-        "label": "2017",
-        "value": "2017"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
-      }
-    ]
-  },
-  "/library?type=variety": {
-    "areas": [
-      {
-        "label": "全部地區",
-        "value": ""
-      },
-      {
-        "label": "中国大陆",
-        "value": "中国大陆"
-      },
-      {
-        "label": "韩国",
-        "value": "韩国"
-      },
-      {
-        "label": "大陆",
-        "value": "大陆"
-      },
-      {
-        "label": "台湾",
-        "value": "台湾"
-      },
-      {
-        "label": "中国台湾",
-        "value": "中国台湾"
-      },
-      {
-        "label": "香港",
-        "value": "香港"
-      },
-      {
-        "label": "美国",
-        "value": "美国"
-      },
-      {
-        "label": "中国香港",
-        "value": "中国香港"
-      },
-      {
-        "label": "内地",
-        "value": "内地"
-      },
-      {
-        "label": "日本",
-        "value": "日本"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:中国大陆,韩国,大陆,台湾,中国台湾,香港,美国,中国香港,内地,日本"
-      }
-    ],
-    "types": [
-      {
-        "label": "全部類型",
-        "value": ""
-      },
-      {
-        "label": "大陆综艺",
-        "value": "大陆综艺"
-      },
-      {
-        "label": "日韩综艺",
-        "value": "日韩综艺"
-      },
-      {
-        "label": "港台综艺",
-        "value": "港台综艺"
-      },
-      {
-        "label": "欧美综艺",
-        "value": "欧美综艺"
-      }
-    ],
-    "years": [
-      {
-        "label": "全部年份",
-        "value": ""
-      },
-      {
-        "label": "2026",
-        "value": "2026"
-      },
-      {
-        "label": "2025",
-        "value": "2025"
-      },
-      {
-        "label": "2024",
-        "value": "2024"
-      },
-      {
-        "label": "2023",
-        "value": "2023"
-      },
-      {
-        "label": "2022",
-        "value": "2022"
-      },
-      {
-        "label": "2021",
-        "value": "2021"
-      },
-      {
-        "label": "2020",
-        "value": "2020"
-      },
-      {
-        "label": "2019",
-        "value": "2019"
-      },
-      {
-        "label": "2018",
-        "value": "2018"
-      },
-      {
-        "label": "2017",
-        "value": "2017"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
-      }
-    ]
-  },
-  "/library?type=duanju": {
-    "areas": [
-      {
-        "label": "全部地區",
-        "value": ""
-      },
-      {
-        "label": "中国大陆",
-        "value": "中国大陆"
-      },
-      {
-        "label": "大陆",
-        "value": "大陆"
-      },
-      {
-        "label": "内地",
-        "value": "内地"
-      },
-      {
-        "label": "韩国",
-        "value": "韩国"
-      },
-      {
-        "label": "日本",
-        "value": "日本"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:中国大陆,大陆,内地,韩国,日本"
-      }
-    ],
-    "types": [
-      {
-        "label": "全部類型",
-        "value": ""
-      },
-      {
-        "label": "AI漫剧",
-        "value": "AI漫剧"
-      },
-      {
-        "label": "爽文短剧",
-        "value": "爽文短剧"
-      },
-      {
-        "label": "漫剧",
-        "value": "漫剧"
-      },
-      {
-        "label": "AI短剧",
-        "value": "AI短剧"
-      },
-      {
-        "label": "短剧",
-        "value": "短剧"
-      },
-      {
-        "label": "现代都市",
-        "value": "现代都市"
-      },
-      {
-        "label": "ai短剧",
-        "value": "ai短剧"
-      },
-      {
-        "label": "反转爽文",
-        "value": "反转爽文"
-      },
-      {
-        "label": "现代言情",
-        "value": "现代言情"
-      },
-      {
-        "label": "重生民国",
-        "value": "重生民国"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:AI漫剧,爽文短剧,漫剧,AI短剧,短剧,现代都市,ai短剧,反转爽文,现代言情,重生民国"
-      }
-    ],
-    "years": [
-      {
-        "label": "全部年份",
-        "value": ""
-      },
-      {
-        "label": "2026",
-        "value": "2026"
-      },
-      {
-        "label": "2025",
-        "value": "2025"
-      },
-      {
-        "label": "2024",
-        "value": "2024"
-      },
-      {
-        "label": "2023",
-        "value": "2023"
-      },
-      {
-        "label": "2022",
-        "value": "2022"
-      },
-      {
-        "label": "2021",
-        "value": "2021"
-      },
-      {
-        "label": "2020",
-        "value": "2020"
-      },
-      {
-        "label": "2019",
-        "value": "2019"
-      },
-      {
-        "label": "2018",
-        "value": "2018"
-      },
-      {
-        "label": "2017",
-        "value": "2017"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
+        "label": "更早",
+        "value": "earlier"
       }
     ]
   },
@@ -554,48 +290,32 @@
         "value": ""
       },
       {
-        "label": "中国大陆",
-        "value": "中国大陆"
+        "label": "中國大陸",
+        "value": "cn"
       },
       {
         "label": "日本",
-        "value": "日本"
+        "value": "jp"
       },
       {
-        "label": "大陆",
-        "value": "大陆"
+        "label": "美國",
+        "value": "us"
       },
       {
-        "label": "美国",
-        "value": "美国"
+        "label": "韓國",
+        "value": "kr"
       },
       {
-        "label": "国产",
-        "value": "国产"
+        "label": "中國香港",
+        "value": "hk"
       },
       {
-        "label": "法国",
-        "value": "法国"
+        "label": "中國台灣",
+        "value": "tw"
       },
       {
-        "label": "韩国",
-        "value": "韩国"
-      },
-      {
-        "label": "英国",
-        "value": "英国"
-      },
-      {
-        "label": "美国,英国,德国,爱尔兰",
-        "value": "美国,英国,德国,爱尔兰"
-      },
-      {
-        "label": "英国,美国,爱尔兰",
-        "value": "英国,美国,爱尔兰"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:中国大陆,日本,大陆,美国,国产,法国,韩国,英国,美国,英国,德国,爱尔兰,英国,美国,爱尔兰"
+        "label": "海外其他",
+        "value": "overseas"
       }
     ],
     "types": [
@@ -604,40 +324,40 @@
         "value": ""
       },
       {
-        "label": "国产动漫",
-        "value": "国产动漫"
+        "label": "國產動漫",
+        "value": "anime_cn"
       },
       {
-        "label": "日韩动漫",
-        "value": "日韩动漫"
+        "label": "日韓動漫",
+        "value": "anime_jp"
       },
       {
-        "label": "中国动漫",
-        "value": "中国动漫"
+        "label": "歐美動漫",
+        "value": "anime_us"
       },
       {
-        "label": "日本动漫",
-        "value": "日本动漫"
+        "label": "港台動漫",
+        "value": "anime_hk"
       },
       {
-        "label": "欧美动漫",
-        "value": "欧美动漫"
+        "label": "海外動漫",
+        "value": "anime_overseas"
       },
       {
-        "label": "动漫电影",
-        "value": "动漫电影"
+        "label": "動畫片",
+        "value": "anime"
       },
       {
-        "label": "动画片",
-        "value": "动画片"
+        "label": "動漫電影",
+        "value": "movie"
       },
       {
-        "label": "AI动漫",
-        "value": "AI动漫"
+        "label": "AI漫劇",
+        "value": "duanju_ai"
       },
       {
-        "label": "港台动漫",
-        "value": "港台动漫"
+        "label": "其他",
+        "value": "__other__:国产动漫,日韩动漫,日本动漫,欧美动漫,港台动漫,海外动漫,动画片,动漫电影,AI漫剧"
       }
     ],
     "years": [
@@ -682,12 +402,216 @@
         "value": "2018"
       },
       {
-        "label": "2017",
-        "value": "2017"
+        "label": "更早",
+        "value": "earlier"
+      }
+    ]
+  },
+  "/library?type=variety": {
+    "areas": [
+      {
+        "label": "全部地區",
+        "value": ""
+      },
+      {
+        "label": "中國大陸",
+        "value": "cn"
+      },
+      {
+        "label": "中國香港",
+        "value": "hk"
+      },
+      {
+        "label": "中國台灣",
+        "value": "tw"
+      },
+      {
+        "label": "韓國",
+        "value": "kr"
+      },
+      {
+        "label": "日本",
+        "value": "jp"
+      },
+      {
+        "label": "美國",
+        "value": "us"
+      },
+      {
+        "label": "海外其他",
+        "value": "overseas"
+      }
+    ],
+    "types": [
+      {
+        "label": "全部類型",
+        "value": ""
+      },
+      {
+        "label": "大陸綜藝",
+        "value": "variety_cn"
+      },
+      {
+        "label": "港台綜藝",
+        "value": "variety_hk"
+      },
+      {
+        "label": "日韓綜藝",
+        "value": "variety_jp"
+      },
+      {
+        "label": "歐美綜藝",
+        "value": "variety_us"
       },
       {
         "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
+        "value": "__other__:大陆综艺,港台综艺,日韩综艺,欧美综艺"
+      }
+    ],
+    "years": [
+      {
+        "label": "全部年份",
+        "value": ""
+      },
+      {
+        "label": "2026",
+        "value": "2026"
+      },
+      {
+        "label": "2025",
+        "value": "2025"
+      },
+      {
+        "label": "2024",
+        "value": "2024"
+      },
+      {
+        "label": "2023",
+        "value": "2023"
+      },
+      {
+        "label": "2022",
+        "value": "2022"
+      },
+      {
+        "label": "2021",
+        "value": "2021"
+      },
+      {
+        "label": "2020",
+        "value": "2020"
+      },
+      {
+        "label": "2019",
+        "value": "2019"
+      },
+      {
+        "label": "2018",
+        "value": "2018"
+      },
+      {
+        "label": "更早",
+        "value": "earlier"
+      }
+    ]
+  },
+  "/library?type=duanju": {
+    "areas": [
+      {
+        "label": "全部地區",
+        "value": ""
+      },
+      {
+        "label": "中國大陸",
+        "value": "cn"
+      },
+      {
+        "label": "海外其他",
+        "value": "overseas"
+      }
+    ],
+    "types": [
+      {
+        "label": "全部類型",
+        "value": ""
+      },
+      {
+        "label": "現代都市",
+        "value": "duanju_modern"
+      },
+      {
+        "label": "言情總裁",
+        "value": "duanju_ceo"
+      },
+      {
+        "label": "反轉爽劇",
+        "value": "duanju_twist"
+      },
+      {
+        "label": "穿越年代",
+        "value": "duanju_time"
+      },
+      {
+        "label": "重生逆襲",
+        "value": "duanju_rebirth"
+      },
+      {
+        "label": "AI漫劇",
+        "value": "duanju_ai"
+      },
+      {
+        "label": "短劇大全",
+        "value": "duanju"
+      },
+      {
+        "label": "其他",
+        "value": "__other__:现代都市,言情总裁,反转爽剧,穿越年代,重生民国,AI漫剧,短剧"
+      }
+    ],
+    "years": [
+      {
+        "label": "全部年份",
+        "value": ""
+      },
+      {
+        "label": "2026",
+        "value": "2026"
+      },
+      {
+        "label": "2025",
+        "value": "2025"
+      },
+      {
+        "label": "2024",
+        "value": "2024"
+      },
+      {
+        "label": "2023",
+        "value": "2023"
+      },
+      {
+        "label": "2022",
+        "value": "2022"
+      },
+      {
+        "label": "2021",
+        "value": "2021"
+      },
+      {
+        "label": "2020",
+        "value": "2020"
+      },
+      {
+        "label": "2019",
+        "value": "2019"
+      },
+      {
+        "label": "2018",
+        "value": "2018"
+      },
+      {
+        "label": "更早",
+        "value": "earlier"
       }
     ]
   },
@@ -698,48 +622,44 @@
         "value": ""
       },
       {
-        "label": "中国大陆",
-        "value": "中国大陆"
+        "label": "中國大陸",
+        "value": "cn"
       },
       {
-        "label": "大陆",
-        "value": "大陆"
+        "label": "美國",
+        "value": "us"
+      },
+      {
+        "label": "中國香港",
+        "value": "hk"
+      },
+      {
+        "label": "中國台灣",
+        "value": "tw"
       },
       {
         "label": "日本",
-        "value": "日本"
+        "value": "jp"
       },
       {
-        "label": "美国",
-        "value": "美国"
+        "label": "韓國",
+        "value": "kr"
       },
       {
-        "label": "内地",
-        "value": "内地"
+        "label": "泰國",
+        "value": "th"
       },
       {
-        "label": "韩国",
-        "value": "韩国"
+        "label": "英國",
+        "value": "uk"
       },
       {
-        "label": "英国",
-        "value": "英国"
+        "label": "法國",
+        "value": "france"
       },
       {
-        "label": "泰国",
-        "value": "泰国"
-      },
-      {
-        "label": "台湾",
-        "value": "台湾"
-      },
-      {
-        "label": "其它",
-        "value": "其它"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:中国大陆,大陆,日本,美国,内地,韩国,英国,泰国,台湾,其它"
+        "label": "海外其他",
+        "value": "overseas"
       }
     ],
     "types": [
@@ -748,48 +668,48 @@
         "value": ""
       },
       {
-        "label": "AI漫剧",
-        "value": "AI漫剧"
+        "label": "電影",
+        "value": "movie"
       },
       {
-        "label": "爽文短剧",
-        "value": "爽文短剧"
+        "label": "電視劇",
+        "value": "tv"
       },
       {
-        "label": "国产动漫",
-        "value": "国产动漫"
+        "label": "動漫",
+        "value": "anime"
       },
       {
-        "label": "国产剧",
-        "value": "国产剧"
+        "label": "綜藝",
+        "value": "variety"
       },
       {
-        "label": "漫剧",
-        "value": "漫剧"
+        "label": "短劇",
+        "value": "duanju"
       },
       {
-        "label": "AI短剧",
-        "value": "AI短剧"
+        "label": "動作片",
+        "value": "action"
       },
       {
-        "label": "足球",
-        "value": "足球"
+        "label": "喜劇片",
+        "value": "comedy"
       },
       {
-        "label": "短剧",
-        "value": "短剧"
+        "label": "科幻片",
+        "value": "scifi"
       },
       {
-        "label": "现代都市",
-        "value": "现代都市"
+        "label": "國產劇",
+        "value": "tv_cn"
       },
       {
-        "label": "欧美剧",
-        "value": "欧美剧"
+        "label": "歐美劇",
+        "value": "tv_us"
       },
       {
         "label": "其他",
-        "value": "__other__:AI漫剧,爽文短剧,国产动漫,国产剧,漫剧,AI短剧,足球,短剧,现代都市,欧美剧"
+        "value": "__other__:电影,电视剧,连续剧,动漫,综艺,短剧,动作片,喜剧片,科幻片,国产剧,欧美剧"
       }
     ],
     "years": [
@@ -834,12 +754,8 @@
         "value": "2018"
       },
       {
-        "label": "2017",
-        "value": "2017"
-      },
-      {
-        "label": "其他",
-        "value": "__other__:2026,2025,2024,2023,2022,2021,2020,2019,2018,2017"
+        "label": "更早",
+        "value": "earlier"
       }
     ]
   }

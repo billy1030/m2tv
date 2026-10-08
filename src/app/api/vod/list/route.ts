@@ -44,6 +44,26 @@ const GENRE_MAP: Record<string, string[]> = {
   war: ['战争', '戰爭', '战争片', '戰爭片', '军旅', '軍旅'],
   drama: ['剧情', '劇情', '剧情片', '劇情片'],
   doc: ['纪录', '紀錄', '纪录片', '紀錄片', '记录片', '記錄片'],
+  // 电视剧细分子类
+  tv_cn: ['国产剧', '國產劇', '大陆剧', '大陸劇', '内地剧'],
+  tv_us: ['欧美剧', '歐美劇', '美剧', '美劇', '美国剧'],
+  tv_hk: ['香港剧', '香港劇', '港剧', '港劇'],
+  tv_tw: ['台湾剧', '台灣劇', '台剧', '台劇'],
+  tv_jp: ['日剧', '日劇', '日本剧', '日本劇'],
+  tv_kr: ['韩剧', '韓劇', '韩国剧', '韓國劇'],
+  tv_th: ['泰剧', '泰劇', '泰国剧', '泰國劇'],
+  tv_overseas: ['海外剧', '海外劇'],
+  // 动漫细分子类
+  anime_cn: ['国产动漫', '國產動漫', '中国动漫', '中國動漫'],
+  anime_jp: ['日韩动漫', '日韓動漫', '日本动漫', '日本動漫'],
+  anime_us: ['欧美动漫', '歐美動漫'],
+  anime_hk: ['港台动漫', '港台動漫'],
+  anime_overseas: ['海外动漫', '海外動漫'],
+  // 综艺细分子类
+  variety_cn: ['大陆综艺', '大陸綜藝', '内地综艺'],
+  variety_hk: ['港台综艺', '港台綜藝'],
+  variety_jp: ['日韩综艺', '日韓綜藝'],
+  variety_us: ['欧美综艺', '歐美綜藝'],
   // 短劇細分題材子類（對齊各節點原生短劇分類，雙向繁簡體）
   duanju_modern: [
     '现代都市',
@@ -210,14 +230,19 @@ const GENRE_MAP: Record<string, string[]> = {
   ],
 };
 
-// 地区过滤映射（精准对齐采集站原生简体词）
+// 地区过滤映射（精准对齐采集站原生简体词及别名）
 const AREA_MAP: Record<string, string[]> = {
   cn: ['大陆', '中国大陆', '国产', '内地'],
   hk: ['香港', '中国香港', '港剧', '香港剧', '港台'],
   tw: ['台湾', '中国台湾', '台剧'],
-  jp: ['日本', '日漫', '日剧'],
-  kr: ['韩国', '韩剧', '韩国剧'],
-  us: ['美国', '美剧', '美'],
+  jp: ['日本', '日漫', '日剧', '日本动漫', '日本剧'],
+  kr: ['韩国', '韩剧', '韩国剧', '日韩'],
+  us: ['美国', '美剧', '美', '欧美', '欧美剧', '欧美动漫'],
+  uk: ['英国', '英剧', '英国剧'],
+  france: ['法国', '法剧', '法国剧'],
+  th: ['泰国', '泰剧', '泰国剧', '马泰'],
+  india: ['印度', '印剧'],
+  canada: ['加拿大'],
   overseas: [
     '海外',
     '泰国',
@@ -262,6 +287,64 @@ async function getSiteClasses(
   }
 }
 
+// 获取类型对应的关键词列表（兼容英文 key、中文原生标签、别名及繁简体）
+function getAllowedWords(genreKey: string): string[] {
+  if (!genreKey) return [];
+  if (genreKey.startsWith('__other__:')) return [];
+
+  // 1. 直接命中 GENRE_MAP 的 key
+  if (GENRE_MAP[genreKey]) {
+    return GENRE_MAP[genreKey];
+  }
+
+  // 2. 遍历 GENRE_MAP 的 values，看是否包含该词或被该词包含
+  const cleanKey = genreKey.trim();
+  for (const words of Object.values(GENRE_MAP)) {
+    if (
+      words.some(
+        (w) => w === cleanKey || cleanKey.includes(w) || w.includes(cleanKey)
+      )
+    ) {
+      // 合并词库，并确保 cleanKey 也在里面
+      return Array.from(new Set([...words, cleanKey]));
+    }
+  }
+
+  // 3. 未在预定义映射中的独立子类型（如 '电影解说' 等），做基本的繁简/去除「片」「剧」衍生
+  const wordsSet = new Set<string>([cleanKey]);
+  const rootWord = cleanKey.replace(/(片|剧|劇)$/, '');
+  if (rootWord && rootWord.length >= 2) {
+    wordsSet.add(rootWord);
+  }
+  return Array.from(wordsSet);
+}
+
+// 获取地区对应的关键词列表（兼容英文 key、中文地区名、别名）
+function getRegionalWords(areaKey: string): string[] {
+  if (!areaKey) return [];
+  if (areaKey.startsWith('__other__:')) return [];
+
+  // 1. 直接命中 AREA_MAP 的 key
+  if (AREA_MAP[areaKey]) {
+    return AREA_MAP[areaKey];
+  }
+
+  // 2. 遍历 AREA_MAP，看是否命中别名或地区名称
+  const cleanKey = areaKey.trim();
+  for (const words of Object.values(AREA_MAP)) {
+    if (
+      words.some(
+        (w) => w === cleanKey || cleanKey.includes(w) || w.includes(cleanKey)
+      )
+    ) {
+      return Array.from(new Set([...words, cleanKey]));
+    }
+  }
+
+  // 3. 独立地区名（如 '印度', '法国' 等）
+  return [cleanKey];
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const batch = parseInt(
@@ -270,7 +353,7 @@ export async function GET(request: Request) {
   );
   const year = searchParams.get('year') || '';
   const genreKey = searchParams.get('type') || '';
-  const areaKey = searchParams.get('area') || ''; // cn, us, jp, kr, hk, tw, th 或空
+  const areaKey = searchParams.get('area') || ''; // cn, us, jp, kr, hk, tw, th 或中文 '美国', '动作片' 等
 
   try {
     const apiSites = await getAvailableApiSites();
@@ -285,11 +368,9 @@ export async function GET(request: Request) {
     const startPg = (batch - 1) * PAGES_PER_FETCH + 1;
 
     // 为每个节点查找目标类型的对应 type_id 列表
-    // 说明：采集站的大类（如「电视剧」、「动漫」）或指定地区时，海量数据分散在各区域子分类中（如「国产剧」、「香港剧」、「台湾剧」、「国产动漫」、「港台综艺」等）
     const targetTypeMap = new Map<string, number[]>();
-    const allowedWords =
-      genreKey && GENRE_MAP[genreKey] ? GENRE_MAP[genreKey] : [];
-    const regionalWords = areaKey && AREA_MAP[areaKey] ? AREA_MAP[areaKey] : [];
+    const allowedWords = getAllowedWords(genreKey);
+    const regionalWords = getRegionalWords(areaKey);
 
     if (allowedWords.length > 0 || regionalWords.length > 0) {
       await Promise.all(
@@ -301,7 +382,7 @@ export async function GET(request: Request) {
           if (regionalWords.length > 0) {
             const matched = classes.filter((c) => {
               const name = c.type_name;
-              // 如果同时指定了类型（如电视剧、动漫、综艺等），类型需相符
+              // 如果同时指定了类型（如动作片、电视剧、动漫、综艺等），类型需相符
               const matchesGenre =
                 allowedWords.length === 0 ||
                 allowedWords.some((w) => name.includes(w));
@@ -311,9 +392,9 @@ export async function GET(request: Request) {
             matchedIds = matched.map((c) => c.type_id);
           }
 
-          // 2. 如果未限定地区，或者指定大板块类型（如电影、电视剧、动漫、综艺、短剧等）：
+          // 2. 如果未限定地区，或者指定大板块类型 / 具体子类型（如动作片、科幻片、电视剧、短剧等）：
           // 采集站普遍将数据存放在各子分类中（如电影的动作/喜剧/科幻片，剧集的国产/香港/欧美剧），
-          // 而顶层父分类（如 type_name: "电影片", type_pid: 0）往往是空的或仅有十余部测试片。
+          // 而顶层父分类（如 type_name: "电影片", type_pid: 0）往往是空的或仅有测试片。
           // 因此若匹配到父分类，或者命中大板块关键词，必须收录其下所有非零子分类！
           if (matchedIds.length === 0 && allowedWords.length > 0) {
             // 找出匹配的父分类（type_pid === 0）
@@ -323,7 +404,25 @@ export async function GET(request: Request) {
                 allowedWords.some((w) => c.type_name.includes(w))
             );
 
-            if (parentMatches.length > 0) {
+            // 检查命中的父分类中是否包含主要大类（电影、电视剧、连续剧、动漫、综艺等）
+            const isBroadCategory = allowedWords.some((w) =>
+              [
+                '电影',
+                '電影',
+                '电视剧',
+                '電視劇',
+                '连续剧',
+                '連續劇',
+                '动漫',
+                '動漫',
+                '综艺',
+                '綜藝',
+                '短剧',
+                '短劇',
+              ].includes(w)
+            );
+
+            if (parentMatches.length > 0 && isBroadCategory) {
               const parentIds = new Set(parentMatches.map((p) => p.type_id));
               // 寻找所有属于这些父分类的子类
               const subClasses = classes.filter(
@@ -339,7 +438,7 @@ export async function GET(request: Request) {
                 matchedIds = matched.map((c) => c.type_id);
               }
             } else {
-              // 属于具体子分类名称（例如单选「科幻片」或「国产动漫」等）
+              // 属于具体子分类名称（例如单选「动作片」、「科幻片」、「国产动漫」等）
               const matched = classes.filter((c) =>
                 allowedWords.some((w) => c.type_name.includes(w))
               );
@@ -462,8 +561,7 @@ export async function GET(request: Request) {
           if (typeName && excludeList.some((ex) => typeName.includes(ex))) {
             continue;
           }
-        } else if (GENRE_MAP[genreKey]) {
-          const allowedWords = GENRE_MAP[genreKey];
+        } else if (allowedWords.length > 0) {
           const matched = allowedWords.some((w) => typeName.includes(w));
           if (!matched) continue;
         } else {
@@ -480,9 +578,8 @@ export async function GET(request: Request) {
           if (vodArea && excludeList.some((ex) => vodArea.includes(ex))) {
             continue;
           }
-        } else if (AREA_MAP[areaKey]) {
-          const allowedAreas = AREA_MAP[areaKey];
-          const matchedArea = allowedAreas.some(
+        } else if (regionalWords.length > 0) {
+          const matchedArea = regionalWords.some(
             (a) => vodArea.includes(a) || typeName.includes(a)
           );
           if (!matchedArea) continue;
