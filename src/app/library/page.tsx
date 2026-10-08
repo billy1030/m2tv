@@ -211,15 +211,20 @@ function LibraryPageClient() {
   const { mode, gridClass } = useDisplayMode();
   const skeletonData = Array.from({ length: 24 }, (_, i) => i);
 
-  // 根据当前类型决定页面标题与是否锁定片种
   const pageTitle =
     typeParam === 'duanju'
       ? '短劇熱門推薦'
       : typeParam === 'anime'
       ? '動漫精選推薦'
+      : typeParam === 'movie'
+      ? '電影精選直連'
+      : typeParam === 'tv'
+      ? '劇集精選直連'
+      : typeParam === 'variety'
+      ? '綜藝精選直連'
       : '片庫聚合直連';
 
-  // 当从 sidebar 点击「短剧」或「动漫」进入时，类型已固定，无需再显示类型条
+  // 当从 sidebar 点击具体类型进入时，类型已预先选上，无需重复显示类型筛选条
   const isTypeLocked = Boolean(typeParam);
 
   const activePath = typeParam ? `/library?type=${typeParam}` : '/library';

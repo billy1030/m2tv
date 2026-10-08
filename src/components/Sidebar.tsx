@@ -147,18 +147,18 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
   const menuItems = [
     {
       icon: Film,
-      label: '豆瓣推介電影',
-      href: '/db?type=movie',
+      label: '電影',
+      href: '/library?type=movie',
     },
     {
       icon: Tv,
-      label: '豆瓣推介劇集',
-      href: '/db?type=tv',
+      label: '劇集',
+      href: '/library?type=tv',
     },
     {
       icon: Clover,
-      label: '豆瓣推介綜藝',
-      href: '/db?type=show',
+      label: '綜藝',
+      href: '/library?type=variety',
     },
     {
       icon: Flame,
@@ -282,10 +282,16 @@ const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
                   const decodedActive = decodeURIComponent(active);
                   const decodedItemHref = decodeURIComponent(item.href);
 
-                  const isActive =
-                    decodedActive === decodedItemHref ||
-                    (decodedActive.startsWith('/db') &&
-                      decodedActive.includes(`type=${typeMatch}`));
+                  const isActive = (() => {
+                    if (decodedActive === decodedItemHref) return true;
+                    if (!typeMatch) {
+                      return decodedActive === item.href.split('?')[0];
+                    }
+                    return (
+                      decodedActive.includes(`type=${typeMatch}`) &&
+                      decodedActive.startsWith(item.href.split('?')[0])
+                    );
+                  })();
                   const Icon = item.icon;
                   return (
                     <Link

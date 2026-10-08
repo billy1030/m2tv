@@ -432,6 +432,17 @@ export default function VideoCard({
               {area}
             </span>
           )}
+          {type && !['movie', 'tv'].includes(type.toLowerCase()) && (
+            <span
+              className={`inline-block font-medium rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 ${
+                isTv
+                  ? 'text-[9px] px-1 py-0'
+                  : 'text-[10px] sm:text-[11px] px-1.5 py-0.5'
+              }`}
+            >
+              {type}
+            </span>
+          )}
           {config.showSourceName && source_name && (
             <span className='inline-block text-gray-500 dark:text-gray-400'>
               <span

@@ -39,18 +39,18 @@ const MobileBottomNav = ({ activePath }: MobileBottomNavProps) => {
     { icon: Search, label: '搜尋', href: '/search' },
     {
       icon: Film,
-      label: '豆瓣電影',
-      href: '/db?type=movie',
+      label: '電影',
+      href: '/library?type=movie',
     },
     {
       icon: Tv,
-      label: '豆瓣劇集',
-      href: '/db?type=tv',
+      label: '劇集',
+      href: '/library?type=tv',
     },
     {
       icon: Clover,
-      label: '豆瓣綜藝',
-      href: '/db?type=show',
+      label: '綜藝',
+      href: '/library?type=variety',
     },
     {
       icon: Flame,
