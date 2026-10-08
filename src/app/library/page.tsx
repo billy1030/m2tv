@@ -106,20 +106,21 @@ function LibraryPageClient() {
 
   const [items, setItems] = useState<VodItem[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>(initialYear);
-  const [selectedCategory, setSelectedCategory] = useState<string>(typeParam);
+  // 子类型默认选中「全部類型」(即 '')
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedArea, setSelectedArea] = useState<string>(areaParam);
   const [selectedDuanjuTheme, setSelectedDuanjuTheme] =
     useState<string>('duanju');
   const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const isDuanjuMode =
+    typeParam === 'duanju' ||
     selectedCategory === 'duanju' ||
-    selectedCategory.startsWith('duanju_') ||
-    typeParam === 'duanju';
+    selectedCategory.startsWith('duanju_');
 
-  // 当 URL searchParams 改变时（例如从側邊欄「短劇」跳到「動漫」或「片庫直連」）同步更新狀態
+  // 当 URL searchParams 改变时（例如从側邊欄「短劇」跳到「動漫」或「電影」）重置子类型为全部('')
   useEffect(() => {
-    setSelectedCategory(typeParam);
+    setSelectedCategory('');
     setSelectedYear(yearParam || currentYearStr);
     setSelectedArea(areaParam);
     setSelectedDuanjuTheme('duanju');
@@ -150,11 +151,16 @@ function LibraryPageClient() {
         params.set('v', '2');
         if (selectedYear) params.set('year', selectedYear);
 
-        // 如果在短剧模式下，根据选中的题材分类请求
-        if (isDuanjuMode) {
-          params.set('type', selectedDuanjuTheme || 'duanju');
+        // 类型传递：
+        // 1. 如果选中了具体的子类型(如'电影解说'或'__other__:')，传递 selectedCategory
+        // 2. 如果是「全部類型」(selectedCategory 為空)，但 URL 有大板块(如 ?type=movie)，传递大板块 typeParam
+        // 3. 如果是短剧模式，且有子题材，传递该题材
+        if (isDuanjuMode && selectedCategory) {
+          params.set('type', selectedCategory);
         } else if (selectedCategory) {
           params.set('type', selectedCategory);
+        } else if (typeParam) {
+          params.set('type', typeParam);
         }
 
         if (selectedArea) params.set('area', selectedArea);
