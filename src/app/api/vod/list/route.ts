@@ -236,12 +236,12 @@ const AREA_MAP: Record<string, string[]> = {
 // 缓存各节点的分类列表以获取 type_id
 const siteClassCache = new Map<
   string,
-  Array<{ type_id: number; type_name: string }>
+  Array<{ type_id: number; type_pid?: number; type_name: string }>
 >();
 
 async function getSiteClasses(
   site: any
-): Promise<Array<{ type_id: number; type_name: string }>> {
+): Promise<Array<{ type_id: number; type_pid?: number; type_name: string }>> {
   const cached = siteClassCache.get(site.key);
   if (cached) {
     return cached;
@@ -311,22 +311,39 @@ export async function GET(request: Request) {
             matchedIds = matched.map((c) => c.type_id);
           }
 
-          // 2. 如果未限定地区，或者指定类型在大类中（如动漫/电影等）：
+          // 2. 如果未限定地区，或者指定大板块类型（如电影、电视剧、动漫、综艺、短剧等）：
+          // 采集站普遍将数据存放在各子分类中（如电影的动作/喜剧/科幻片，剧集的国产/香港/欧美剧），
+          // 而顶层父分类（如 type_name: "电影片", type_pid: 0）往往是空的或仅有十余部测试片。
+          // 因此若匹配到父分类，或者命中大板块关键词，必须收录其下所有非零子分类！
           if (matchedIds.length === 0 && allowedWords.length > 0) {
-            if (genreKey === 'anime') {
-              // 动漫大类：采集站的大类「动漫片」(53部)是空的容器，真正数据在各子分类中，故收录所有子类
+            // 找出匹配的父分类（type_pid === 0）
+            const parentMatches = classes.filter(
+              (c) =>
+                (c.type_pid === 0 || !c.type_pid) &&
+                allowedWords.some((w) => c.type_name.includes(w))
+            );
+
+            if (parentMatches.length > 0) {
+              const parentIds = new Set(parentMatches.map((p) => p.type_id));
+              // 寻找所有属于这些父分类的子类
+              const subClasses = classes.filter(
+                (c) => c.type_pid && parentIds.has(c.type_pid)
+              );
+              if (subClasses.length > 0) {
+                matchedIds = subClasses.map((c) => c.type_id);
+              } else {
+                // 若没有声明 type_pid，则按 allowedWords 进行模糊匹配
+                const matched = classes.filter((c) =>
+                  allowedWords.some((w) => c.type_name.includes(w))
+                );
+                matchedIds = matched.map((c) => c.type_id);
+              }
+            } else {
+              // 属于具体子分类名称（例如单选「科幻片」或「国产动漫」等）
               const matched = classes.filter((c) =>
                 allowedWords.some((w) => c.type_name.includes(w))
               );
               matchedIds = matched.map((c) => c.type_id);
-            } else {
-              // 其他分类优先单一大类
-              const singleMatched = classes.find((c) =>
-                allowedWords.some((w) => c.type_name.includes(w))
-              );
-              if (singleMatched) {
-                matchedIds = [singleMatched.type_id];
-              }
             }
           }
 
