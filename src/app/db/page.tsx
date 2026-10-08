@@ -380,19 +380,21 @@ function DoubanPageClient() {
   return (
     <PageLayout activePath={getActivePath()}>
       <div
-        className={`px-2 sm:px-6 py-2 sm:py-4 overflow-visible ${
+        className={`px-2 sm:px-6 pb-2 sm:pb-4 overflow-visible ${
           mode === 'tv' ? 'max-w-none' : ''
         }`}
       >
-        {/* 页面标题和选择器 */}
-        <div className='mb-3 sm:mb-4 space-y-2'>
-          {/* 页面标题 */}
-          <div className='flex items-center justify-between'>
+        {/* 顶部标题栏：直接貼頂吸頂停留（top-0），零初始間距，完全無滑動跳動 */}
+        <div className='sticky top-0 z-30 -mx-2 sm:-mx-6 px-2 sm:px-6 py-2.5 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-gray-200/40 dark:border-gray-800/40 transition-colors'>
+          <div className='flex items-center justify-between pr-44 sm:pr-48'>
             <h1 className='text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-200'>
               {getPageTitle()}
             </h1>
           </div>
+        </div>
 
+        {/* 页面选择器：跟隨頁面捲動 */}
+        <div className='mt-2.5 mb-3 sm:mb-4 space-y-2'>
           {/* 选择器组件 */}
           {type !== 'custom' ? (
             <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-3 border border-gray-200/30 dark:border-gray-700/30 backdrop-blur-sm'>

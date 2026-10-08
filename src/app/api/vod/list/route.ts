@@ -7,10 +7,10 @@ import { yellowWords } from '@/lib/yellow';
 
 export const runtime = 'edge';
 
-// 目标聚合数量：每次精确返回 100 部去重/聚合后的影片
-const TARGET_ITEMS_PER_BATCH = 100;
-// 单次从各采集站分页拉取页数（当有具体筛选条件如地区时，拉取 6 页以保证凑齐 100 部）
-const PAGES_PER_FETCH = 6;
+// 目标聚合数量：每次精确返回 50 部去重/聚合后的影片
+const TARGET_ITEMS_PER_BATCH = 50;
+// 单次从各采集站分页拉取页数（拉取 3 页以保证凑齐 50 部）
+const PAGES_PER_FETCH = 3;
 
 // 片种类别的关键词映射（支持简体与繁体双向对齐）
 const GENRE_MAP: Record<string, string[]> = {

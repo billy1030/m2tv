@@ -265,35 +265,35 @@ function LibraryPageClient() {
   return (
     <PageLayout activePath={activePath}>
       <div
-        className={`px-2 sm:px-6 py-2 sm:py-4 mx-auto ${
+        className={`px-2 sm:px-6 pb-2 sm:pb-4 mx-auto ${
           mode === 'tv' ? 'max-w-none' : 'max-w-7xl'
         }`}
       >
-        {/* 顶部标题与数量徽章（放在左侧标题右边，避免与右上角全局圖標重疊） */}
-        <div className='mb-2 flex items-center justify-start gap-2.5 flex-wrap'>
-          <h1 className='text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100'>
-            {pageTitle}
-          </h1>
-          {totalCount > 0 && (
-            <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-normal bg-gray-100 text-gray-500 border border-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700/60'>
-              已載入 {items.length} / 逾 {totalCount.toLocaleString()} 部
-            </span>
-          )}
-          <button
-            type='button'
-            onClick={() => setIsStatsOpen(true)}
-            title='片庫真實數據統計 (10,000部)'
-            aria-label='片庫真實數據統計 (10,000部)'
-            className='inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60 transition-all shadow-sm hover:scale-105 active:scale-95'
-          >
-            <BarChart3 className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
-          </button>
+        {/* 顶部标题栏：直接貼頂吸頂停留（top-0），零初始間距，完全無滑動跳動 */}
+        <div className='sticky top-0 z-30 -mx-2 sm:-mx-6 px-2 sm:px-6 py-2.5 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-gray-200/40 dark:border-gray-800/40 transition-colors'>
+          <div className='flex items-center justify-start gap-2.5 flex-wrap pr-44 sm:pr-48'>
+            <h1 className='text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-100'>
+              {pageTitle}
+            </h1>
+            {totalCount > 0 && (
+              <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-normal bg-gray-100 text-gray-500 border border-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700/60'>
+                已載入 {items.length} / 逾 {totalCount.toLocaleString()} 部
+              </span>
+            )}
+            <button
+              type='button'
+              onClick={() => setIsStatsOpen(true)}
+              title='片庫真實數據統計 (10,000部)'
+              aria-label='片庫真實數據統計 (10,000部)'
+              className='inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/60 transition-all shadow-sm hover:scale-105 active:scale-95'
+            >
+              <BarChart3 className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
+            </button>
+          </div>
         </div>
 
-        {/* 筛选面板：
-            - 普通模式：横向滚动条
-            - 电视模式 (mode === 'tv')：共 12 个资料（全部 + 10个具体选项 + 其他），每个类别拆成 2 行显示，每行 6 个按钮，类型+地区+年份共 6 行，极其方便遥控器直观操控 */}
-        <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-2.5 border border-gray-200/30 dark:border-gray-700/30 space-y-2 backdrop-blur-sm'>
+        {/* 筛选面板：跟隨頁面捲動 */}
+        <div className='mt-1 bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-2.5 border border-gray-200/30 dark:border-gray-700/30 space-y-2 backdrop-blur-sm'>
           {/* 1. 片種 / 類型篩選 */}
           {currentFilters.types && currentFilters.types.length > 1 && (
             <div className='space-y-1.5'>
@@ -527,7 +527,7 @@ function LibraryPageClient() {
                 ))}
           </div>
 
-          {/* 无限滚动触发：到底部自动拉取另外 100 部 */}
+          {/* 无限滚动触发：到底部自动拉取另外 50 部 */}
           {hasMore && !loading && (
             <div
               ref={loadingRef}
@@ -537,12 +537,12 @@ function LibraryPageClient() {
                 <div className='flex items-center gap-2'>
                   <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-green-500'></div>
                   <span className='text-gray-600 dark:text-gray-400 text-sm'>
-                    正在載入下一批 100 部影片... (目前已載入 {items.length} 部)
+                    正在載入下一批 50 部影片... (目前已載入 {items.length} 部)
                   </span>
                 </div>
               ) : (
                 <span className='text-xs text-gray-400 dark:text-gray-500'>
-                  向下捲動將自動載入更多片源（每次 100 部）
+                  向下捲動將自動載入更多片源（每次 50 部）
                 </span>
               )}
             </div>

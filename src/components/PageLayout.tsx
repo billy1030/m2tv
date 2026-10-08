@@ -36,8 +36,8 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             </div>
           )}
 
-          {/* 桌面端顶部按钮 */}
-          <div className='absolute top-2 right-4 z-20 hidden md:flex items-center gap-2'>
+          {/* 桌面端顶部按钮：fixed 固定吸顶，高层级 z-40 确保永不被遮挡 */}
+          <div className='fixed top-2 right-4 z-40 hidden md:flex items-center gap-2'>
             <Link
               href='/setup'
               className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
