@@ -4,7 +4,7 @@
 
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-import { Heart } from 'lucide-react';
+import { Check, Copy, Heart } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
@@ -141,6 +141,47 @@ function PlayPageClient() {
 
   // 视频播放地址
   const [videoUrl, setVideoUrl] = useState('');
+  const [copiedM3u8, setCopiedM3u8] = useState(false);
+  const [copiedPageLink, setCopiedPageLink] = useState(false);
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCopyM3u8 = async () => {
+    if (!videoUrl) return;
+    const ok = await copyToClipboard(videoUrl);
+    if (ok) {
+      setCopiedM3u8(true);
+      setTimeout(() => setCopiedM3u8(false), 2000);
+      if (artPlayerRef.current?.notice) {
+        artPlayerRef.current.notice.show = '已複製實際視頻鏈接 (M3U8)！';
+      }
+    }
+  };
+
+  const handleCopyPageLink = async () => {
+    if (typeof window === 'undefined') return;
+    const ok = await copyToClipboard(window.location.href);
+    if (ok) {
+      setCopiedPageLink(true);
+      setTimeout(() => setCopiedPageLink(false), 2000);
+    }
+  };
 
   // 总集数
   const totalEpisodes = detail?.episodes?.length || 0;
@@ -1414,6 +1455,15 @@ function PlayPageClient() {
               }
             },
           },
+          {
+            html: '複製視頻鏈接 (M3U8)',
+            icon: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+            tooltip: '複製真實 M3U8 下載/串流鏈接',
+            onClick: function () {
+              handleCopyM3u8();
+              return '已複製！';
+            },
+          },
         ],
         // 控制栏配置
         controls: [
@@ -1745,16 +1795,68 @@ function PlayPageClient() {
   return (
     <PageLayout activePath='/play'>
       <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
-        {/* 第一行：影片标题（向右留出 2-3 個字位置，避免與左側返回箭頭重疊） */}
-        <div className='py-1 pl-11 md:pl-12'>
-          <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100'>
-            {videoTitle || '影片標題'}
+        {/* 第一行：影片标题与操作按钮 */}
+        <div className='py-1 pl-11 md:pl-12 flex items-center justify-between flex-wrap gap-2'>
+          <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap'>
+            <span>{videoTitle || '影片標題'}</span>
             {totalEpisodes > 1 && (
-              <span className='text-gray-500 dark:text-gray-400'>
+              <span className='text-gray-500 dark:text-gray-400 text-sm font-normal'>
                 {` > 第 ${currentEpisodeIndex + 1} 集`}
               </span>
             )}
           </h1>
+
+          <div className='flex items-center gap-2'>
+            {/* 複製真實視頻鏈接 (M3U8) */}
+            {videoUrl && (
+              <button
+                type='button'
+                onClick={handleCopyM3u8}
+                title={videoUrl}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm ${
+                  copiedM3u8
+                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 active:scale-95'
+                }`}
+              >
+                {copiedM3u8 ? (
+                  <>
+                    <Check size={14} className='stroke-[2.5]' />
+                    <span>已複製 M3U8</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} className='stroke-[2.5]' />
+                    <span>複製實際視頻鏈接 (M3U8)</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* 複製本頁分享鏈接 */}
+            <button
+              type='button'
+              onClick={handleCopyPageLink}
+              title='複製當前播放頁面網址'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                copiedPageLink
+                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                  : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750'
+              }`}
+            >
+              {copiedPageLink ? (
+                <>
+                  <Check size={14} className='stroke-[2.5]' />
+                  <span>已複製頁面網址</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={14} />
+                  <span>複製播放頁面</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
         {/* 第二行：播放器和选集 */}
         <div className='space-y-2'>

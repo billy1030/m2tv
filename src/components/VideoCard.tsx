@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CheckCircle, Film, Heart, Link, PlayCircleIcon } from 'lucide-react';
+import {
+  Check,
+  CheckCircle,
+  Copy,
+  Film,
+  Heart,
+  Link,
+  PlayCircleIcon,
+} from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -59,9 +67,10 @@ export default function VideoCard({
   area,
 }: VideoCardProps) {
   const router = useRouter();
-  const { mode } = useDisplayMode();
+  const { mode, copyLinkMode } = useDisplayMode();
   const isTv = mode === 'tv';
   const [favorited, setFavorited] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -201,35 +210,142 @@ export default function VideoCard({
     [from, actualSource, actualId, onDelete]
   );
 
-  const handleClick = useCallback(() => {
+  const playRelativeUrl = useMemo(() => {
     if (from === 'douban') {
-      router.push(
-        `/play?title=${encodeURIComponent(actualTitle.trim())}${
-          actualYear ? `&year=${actualYear}` : ''
-        }${actualSearchType ? `&stype=${actualSearchType}` : ''}`
-      );
-    } else if (actualSource && actualId) {
-      router.push(
-        `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
-          actualTitle
-        )}${actualYear ? `&year=${actualYear}` : ''}${
-          isAggregate ? '&prefer=true' : ''
-        }${
-          actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
-        }${actualSearchType ? `&stype=${actualSearchType}` : ''}`
-      );
+      return `/play?title=${encodeURIComponent(actualTitle.trim())}${
+        actualYear ? `&year=${actualYear}` : ''
+      }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
     }
+    if (actualSource && actualId) {
+      return `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
+        actualTitle
+      )}${actualYear ? `&year=${actualYear}` : ''}${
+        isAggregate ? '&prefer=true' : ''
+      }${
+        actualQuery ? `&stitle=${encodeURIComponent(actualQuery.trim())}` : ''
+      }${actualSearchType ? `&stype=${actualSearchType}` : ''}`;
+    }
+    return '';
   }, [
     from,
-    actualSource,
-    actualId,
-    router,
     actualTitle,
     actualYear,
+    actualSearchType,
+    actualSource,
+    actualId,
     isAggregate,
     actualQuery,
-    actualSearchType,
   ]);
+
+  const handleCopyLink = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      setCopied(false);
+
+      // 1. 如果已有聚合/现有 episodes 数据，直接提取第一集 m3u8
+      let targetM3u8 = '';
+      if (
+        aggregateData?.first?.episodes &&
+        aggregateData.first.episodes.length > 0
+      ) {
+        targetM3u8 = aggregateData.first.episodes[0];
+      }
+
+      // 2. 如果没有直接的 episodes，但有 actualSource 和 actualId，实时请求 /api/detail 获取真实 m3u8
+      if (!targetM3u8 && actualSource && actualId) {
+        try {
+          const res = await fetch(
+            `/api/detail?source=${actualSource}&id=${actualId}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.episodes && data.episodes.length > 0) {
+              targetM3u8 = data.episodes[0];
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // 3. 如果是豆瓣卡片（from === 'douban'）或尚无 M3U8，通过 /api/search 查询该片名匹配的真实播放源
+      if (!targetM3u8 && actualTitle) {
+        try {
+          const searchRes = await fetch(
+            `/api/search?q=${encodeURIComponent(actualTitle.trim())}`
+          );
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            const results = (searchData?.results || []) as SearchResult[];
+            // 优先匹配相同年份的结果，否则取第一个有有效播放链接的结果
+            const matched =
+              results.find(
+                (r) =>
+                  r.episodes?.length > 0 &&
+                  r.title.replaceAll(' ', '').toLowerCase() ===
+                    actualTitle.replaceAll(' ', '').toLowerCase() &&
+                  (!actualYear || r.year === actualYear)
+              ) || results.find((r) => r.episodes?.length > 0);
+
+            if (matched && matched.episodes?.length > 0) {
+              targetM3u8 = matched.episodes[0];
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // 4. 兜底：如果所有资源源均未收录该视频，才复制播放页面链接
+      const textToCopy =
+        targetM3u8 ||
+        (typeof window !== 'undefined' && playRelativeUrl
+          ? `${window.location.origin}${playRelativeUrl}`
+          : playRelativeUrl);
+
+      if (!textToCopy) return;
+
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else {
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // ignore
+      }
+    },
+    [
+      actualId,
+      actualSource,
+      actualTitle,
+      actualYear,
+      aggregateData,
+      playRelativeUrl,
+    ]
+  );
+
+  const handleClick = useCallback(() => {
+    // 仅在电脑模式 (desktop) 并且開啟複製模式時觸發複製，其他模式維持原點擊跳轉行為
+    if (mode === 'desktop' && copyLinkMode) {
+      handleCopyLink();
+      return;
+    }
+    if (playRelativeUrl) {
+      router.push(playRelativeUrl);
+    }
+  }, [copyLinkMode, handleCopyLink, mode, playRelativeUrl, router]);
 
   const config = useMemo(() => {
     const configs = {
@@ -362,20 +478,50 @@ export default function VideoCard({
           </div>
         )}
 
-        {/* 豆瓣链接 */}
-        {config.showDoubanLink && actualDoubanId && (
-          <a
-            href={`https://movie.douban.com/subject/${actualDoubanId}`}
-            target='_blank'
-            rel='noopener noreferrer'
-            onClick={(e) => e.stopPropagation()}
-            className='absolute top-2 left-2 opacity-0 -translate-x-2 transition-all duration-300 ease-in-out delay-100 group-hover:opacity-100 group-hover:translate-x-0'
+        {/* 複製連結按鈕 / 徽章（僅電腦模式且開啟複製模式或已複製時顯示） */}
+        {mode === 'desktop' && playRelativeUrl && (copyLinkMode || copied) && (
+          <button
+            type='button'
+            onClick={handleCopyLink}
+            title={
+              copied ? '已複製真實 M3U8 鏈接！' : '點擊複製真實視頻鏈接 (M3U8)'
+            }
+            className={`absolute top-2 left-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold shadow-lg transition-all duration-200 animate-in fade-in zoom-in-95 ${
+              copied
+                ? 'bg-emerald-600 text-white scale-105'
+                : 'bg-amber-500 hover:bg-amber-600 text-white hover:scale-105 active:scale-95'
+            }`}
           >
-            <div className='bg-green-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-green-600 hover:scale-[1.1] transition-all duration-300 ease-out'>
-              <Link size={16} />
-            </div>
-          </a>
+            {copied ? (
+              <>
+                <Check size={13} className='stroke-[2.5]' />
+                <span>已複製</span>
+              </>
+            ) : (
+              <>
+                <Copy size={13} className='stroke-[2.5]' />
+                <span>複製</span>
+              </>
+            )}
+          </button>
         )}
+
+        {/* 豆瓣链接 (非複製模式下顯示) */}
+        {config.showDoubanLink &&
+          actualDoubanId &&
+          !(mode === 'desktop' && (copyLinkMode || copied)) && (
+            <a
+              href={`https://movie.douban.com/subject/${actualDoubanId}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              onClick={(e) => e.stopPropagation()}
+              className='absolute top-2 left-2 opacity-0 -translate-x-2 transition-all duration-300 ease-in-out delay-100 group-hover:opacity-100 group-hover:translate-x-0'
+            >
+              <div className='bg-green-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md hover:bg-green-600 hover:scale-[1.1] transition-all duration-300 ease-out'>
+                <Link size={16} />
+              </div>
+            </a>
+          )}
 
         {/* 进度条（置于海报内底部，不撑高卡片） */}
         {config.showProgress && progress !== undefined && (

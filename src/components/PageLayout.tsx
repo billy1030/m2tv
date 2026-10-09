@@ -2,6 +2,7 @@ import { HardDriveUpload } from 'lucide-react';
 import Link from 'next/link';
 
 import { BackButton } from './BackButton';
+import { CopyLinkModeToggle } from './CopyLinkModeToggle';
 import { DisplayModeToggle } from './DisplayModeToggle';
 import MobileBottomNav from './MobileBottomNav';
 import MobileHeader from './MobileHeader';
@@ -46,6 +47,7 @@ const PageLayout = ({ children, activePath = '/' }: PageLayoutProps) => {
             >
               <HardDriveUpload className='w-5 h-5 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400' />
             </Link>
+            <CopyLinkModeToggle />
             <DisplayModeToggle />
             <ThemeToggle />
             <UserMenu />

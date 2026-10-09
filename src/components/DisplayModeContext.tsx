@@ -15,6 +15,8 @@ interface DisplayModeContextType {
   mode: DisplayMode;
   setMode: (mode: DisplayMode) => void;
   gridClass: string;
+  copyLinkMode: boolean;
+  toggleCopyLinkMode: () => void;
 }
 
 const DisplayModeContext = createContext<DisplayModeContextType>({
@@ -23,6 +25,9 @@ const DisplayModeContext = createContext<DisplayModeContextType>({
   setMode: () => {},
   gridClass:
     'grid grid-cols-3 gap-x-2 gap-y-12 px-0 sm:px-2 sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] sm:gap-x-8 sm:gap-y-20',
+  copyLinkMode: false,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  toggleCopyLinkMode: () => {},
 });
 
 export const useDisplayMode = () => useContext(DisplayModeContext);
@@ -31,7 +36,12 @@ const STORAGE_KEY = 'm2tv_display_mode';
 
 export function DisplayModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<DisplayMode>('desktop');
+  const [copyLinkMode, setCopyLinkMode] = useState<boolean>(false);
   const [mounted, setMounted] = useState(false);
+
+  const toggleCopyLinkMode = useCallback(() => {
+    setCopyLinkMode((prev) => !prev);
+  }, []);
 
   useEffect(() => {
     try {
@@ -93,7 +103,9 @@ export function DisplayModeProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <DisplayModeContext.Provider value={{ mode, setMode, gridClass }}>
+    <DisplayModeContext.Provider
+      value={{ mode, setMode, gridClass, copyLinkMode, toggleCopyLinkMode }}
+    >
       {children}
     </DisplayModeContext.Provider>
   );

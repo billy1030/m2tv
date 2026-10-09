@@ -1,13 +1,13 @@
 'use client';
 
-import { Laptop, MonitorPlay, Smartphone } from 'lucide-react';
+import { Copy, Laptop, MonitorPlay, Smartphone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { DisplayMode, useDisplayMode } from './DisplayModeContext';
 
 export function DisplayModeToggle() {
-  const { mode, setMode } = useDisplayMode();
+  const { mode, setMode, copyLinkMode, toggleCopyLinkMode } = useDisplayMode();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -97,6 +97,50 @@ export function DisplayModeToggle() {
             );
           })}
         </div>
+        {mode === 'desktop' && (
+          <div className='py-1 border-t border-gray-100 dark:border-gray-800'>
+            <button
+              type='button'
+              onClick={() => {
+                toggleCopyLinkMode();
+              }}
+              className={`w-full px-3 py-2 text-left flex items-center justify-between transition-colors text-sm ${
+                copyLinkMode
+                  ? 'bg-amber-50/80 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-medium'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              <div className='flex items-center gap-2.5 min-w-0'>
+                <Copy
+                  className={`w-4 h-4 shrink-0 ${
+                    copyLinkMode
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-gray-400 dark:text-gray-500'
+                  }`}
+                />
+                <div className='flex flex-col min-w-0'>
+                  <span className='text-xs font-medium'>複製連結模式</span>
+                  <span className='text-[10px] text-gray-400 dark:text-gray-500 truncate'>
+                    {copyLinkMode
+                      ? '已開啟（點擊複製連結）'
+                      : '點擊卡片左上角按鈕複製'}
+                  </span>
+                </div>
+              </div>
+              <div
+                className={`relative inline-flex h-4 w-8 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  copyLinkMode ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    copyLinkMode ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -106,11 +150,16 @@ export function DisplayModeToggle() {
       <div className='relative'>
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors'
-          title={`當前顯示模式：${currentOption.label}`}
+          className='w-10 h-10 p-2 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200/50 dark:text-gray-300 dark:hover:bg-gray-700/50 transition-colors relative'
+          title={`當前顯示模式：${currentOption.label}${
+            copyLinkMode ? '（已開啟複製連結模式）' : ''
+          }`}
           aria-label='Toggle display mode'
         >
           <CurrentIcon className='w-5 h-5 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400' />
+          {mode === 'desktop' && copyLinkMode && (
+            <span className='absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-gray-900' />
+          )}
         </button>
       </div>
 
