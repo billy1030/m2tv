@@ -4,7 +4,7 @@
 
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-import { Check, Copy, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
@@ -141,8 +141,6 @@ function PlayPageClient() {
 
   // 视频播放地址
   const [videoUrl, setVideoUrl] = useState('');
-  const [copiedM3u8, setCopiedM3u8] = useState(false);
-  const [copiedPageLink, setCopiedPageLink] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -166,20 +164,9 @@ function PlayPageClient() {
     if (!videoUrl) return;
     const ok = await copyToClipboard(videoUrl);
     if (ok) {
-      setCopiedM3u8(true);
-      setTimeout(() => setCopiedM3u8(false), 2000);
       if (artPlayerRef.current?.notice) {
         artPlayerRef.current.notice.show = '已複製實際視頻鏈接 (M3U8)！';
       }
-    }
-  };
-
-  const handleCopyPageLink = async () => {
-    if (typeof window === 'undefined') return;
-    const ok = await copyToClipboard(window.location.href);
-    if (ok) {
-      setCopiedPageLink(true);
-      setTimeout(() => setCopiedPageLink(false), 2000);
     }
   };
 
@@ -1794,113 +1781,65 @@ function PlayPageClient() {
 
   return (
     <PageLayout activePath='/play'>
-      <div className='flex flex-col gap-3 py-4 px-5 lg:px-[3rem] 2xl:px-20'>
-        {/* 第一行：影片标题与操作按钮 */}
-        <div className='py-1 pl-11 md:pl-12 flex items-center justify-between flex-wrap gap-2'>
-          <h1 className='text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap'>
-            <span>{videoTitle || '影片標題'}</span>
-            {totalEpisodes > 1 && (
-              <span className='text-gray-500 dark:text-gray-400 text-sm font-normal'>
-                {` > 第 ${currentEpisodeIndex + 1} 集`}
-              </span>
-            )}
-          </h1>
+      <div className='flex flex-col gap-3 pb-4 px-5 lg:px-[3rem] 2xl:px-20'>
+        {/* 第一行：影片标题与选集控制（貼頂吸頂 sticky top-0，毛玻璃背景） */}
+        <div className='sticky top-0 z-30 -mx-5 lg:-mx-[3rem] 2xl:-mx-20 px-5 lg:px-[3rem] 2xl:px-20 py-2.5 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-gray-200/40 dark:border-gray-800/40 transition-colors'>
+          <div className='pl-11 md:pl-12 pr-44 sm:pr-48 flex items-center justify-between flex-wrap gap-2.5'>
+            <div className='flex items-center gap-3 flex-wrap'>
+              <h1 className='text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap'>
+                <span>{videoTitle || '影片標題'}</span>
+                {totalEpisodes > 1 && (
+                  <span className='text-gray-500 dark:text-gray-400 text-sm font-normal'>
+                    {` > 第 ${currentEpisodeIndex + 1} 集`}
+                  </span>
+                )}
+              </h1>
 
-          <div className='flex items-center gap-2'>
-            {/* 複製真實視頻鏈接 (M3U8) */}
-            {videoUrl && (
+              {/* 折叠选集控制按钮：直接放在戏名右边 */}
               <button
                 type='button'
-                onClick={handleCopyM3u8}
-                title={videoUrl}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm ${
-                  copiedM3u8
-                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                    : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 active:scale-95'
-                }`}
+                onClick={() =>
+                  setIsEpisodeSelectorCollapsed(!isEpisodeSelectorCollapsed)
+                }
+                className='group relative flex items-center space-x-1.5 px-3 py-1 rounded-full bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 backdrop-blur-sm border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow transition-all duration-200'
+                title={
+                  isEpisodeSelectorCollapsed ? '显示选集面板' : '隐藏选集面板'
+                }
               >
-                {copiedM3u8 ? (
-                  <>
-                    <Check size={14} className='stroke-[2.5]' />
-                    <span>已複製 M3U8</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} className='stroke-[2.5]' />
-                    <span>複製實際視頻鏈接 (M3U8)</span>
-                  </>
-                )}
-              </button>
-            )}
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+                    isEpisodeSelectorCollapsed ? 'rotate-180' : 'rotate-0'
+                  }`}
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth='2'
+                    d='M9 5l7 7-7 7'
+                  />
+                </svg>
+                <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
+                  {isEpisodeSelectorCollapsed ? '显示选集' : '隐藏选集'}
+                </span>
 
-            {/* 複製本頁分享鏈接 */}
-            <button
-              type='button'
-              onClick={handleCopyPageLink}
-              title='複製當前播放頁面網址'
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                copiedPageLink
-                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
-                  : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750'
-              }`}
-            >
-              {copiedPageLink ? (
-                <>
-                  <Check size={14} className='stroke-[2.5]' />
-                  <span>已複製頁面網址</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={14} />
-                  <span>複製播放頁面</span>
-                </>
-              )}
-            </button>
+                {/* 状态指示点 */}
+                <div
+                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-all duration-200 ${
+                    isEpisodeSelectorCollapsed
+                      ? 'bg-orange-400 animate-pulse'
+                      : 'bg-green-400'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         </div>
+
         {/* 第二行：播放器和选集 */}
-        <div className='space-y-2'>
-          {/* 折叠控制 - 仅在 lg 及以上屏幕显示 */}
-          <div className='hidden lg:flex justify-end'>
-            <button
-              onClick={() =>
-                setIsEpisodeSelectorCollapsed(!isEpisodeSelectorCollapsed)
-              }
-              className='group relative flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white dark:bg-gray-800/80 dark:hover:bg-gray-800 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200'
-              title={
-                isEpisodeSelectorCollapsed ? '显示选集面板' : '隐藏选集面板'
-              }
-            >
-              <svg
-                className={`w-3.5 h-3.5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
-                  isEpisodeSelectorCollapsed ? 'rotate-180' : 'rotate-0'
-                }`}
-                fill='none'
-                stroke='currentColor'
-                viewBox='0 0 24 24'
-              >
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth='2'
-                  d='M9 5l7 7-7 7'
-                />
-              </svg>
-              <span className='text-xs font-medium text-gray-600 dark:text-gray-300'>
-                {isEpisodeSelectorCollapsed ? '显示' : '隐藏'}
-              </span>
-
-              {/* 精致的状态指示点 */}
-              <div
-                className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full transition-all duration-200 ${
-                  isEpisodeSelectorCollapsed
-                    ? 'bg-orange-400 animate-pulse'
-                    : 'bg-green-400'
-                }`}
-              ></div>
-            </button>
-          </div>
-
+        <div className='space-y-2 mt-1'>
           <div
             className={`grid gap-4 lg:h-[500px] xl:h-[650px] 2xl:h-[750px] transition-all duration-300 ease-in-out ${
               isEpisodeSelectorCollapsed
