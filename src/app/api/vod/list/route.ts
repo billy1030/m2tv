@@ -233,7 +233,7 @@ const GENRE_MAP: Record<string, string[]> = {
 // 地区过滤映射（精准对齐采集站原生简体词及别名）
 const AREA_MAP: Record<string, string[]> = {
   cn: ['大陆', '中国大陆', '国产', '内地'],
-  hk: ['香港', '中国香港', '港剧', '香港剧', '港台'],
+  hk: ['香港', '中国香港', '香港地区'],
   tw: ['台湾', '中国台湾', '台剧'],
   jp: ['日本', '日漫', '日剧', '日本动漫', '日本剧'],
   kr: ['韩国', '韩剧', '韩国剧', '日韩'],
@@ -491,6 +491,20 @@ export async function GET(request: Request) {
               yearsToFetch.push(String(y));
             }
           }
+        } else if (areaKey && genreKey === 'movie') {
+          // 当筛选特定地区（如香港、台湾、日本）的电影且选「全部年份」时：
+          // 采集站没有「香港电影」专类，所有电影混合在动作/喜剧/爱情片等子类中且全按最新更新排序。
+          // 若不传年份，前几页会被 2026 年占满，导致 2025、2024、2023 等年份完全出不来。
+          // 因此采用多年代智能交替采样：包含最新年份(2026)、近三年(2025, 2024, 2023)以及代表性年份
+          if (batch === 1) {
+            yearsToFetch = [null, '2025', '2024', '2023'];
+          } else if (batch === 2) {
+            yearsToFetch = [null, '2024', '2022', '2021'];
+          } else if (batch === 3) {
+            yearsToFetch = [null, '2023', '2020', '2019'];
+          } else {
+            yearsToFetch = [null];
+          }
         }
 
         for (let p = subStartPg; p <= subEndPg; p++) {
@@ -579,9 +593,13 @@ export async function GET(request: Request) {
             continue;
           }
         } else if (regionalWords.length > 0) {
-          const matchedArea = regionalWords.some(
-            (a) => vodArea.includes(a) || typeName.includes(a)
-          );
+          // 优先检查影片明确填写的 vod_area；若 vod_area 为空才尝试从分类名推断
+          let matchedArea = false;
+          if (vodArea) {
+            matchedArea = regionalWords.some((a) => vodArea.includes(a));
+          } else if (typeName) {
+            matchedArea = regionalWords.some((a) => typeName.includes(a));
+          }
           if (!matchedArea) continue;
         } else {
           // 精确匹配采集站原生标签 (例如: '美国', '中国大陆', '日本' 等)
