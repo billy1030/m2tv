@@ -36,9 +36,9 @@ function VersionDisplay() {
   }, []);
 
   return (
-    <button
-      onClick={() => window.open('https://github.com/billy1030/m2tv', '_blank')}
-      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 shadow-sm text-xs text-gray-700 dark:text-gray-300 transition-colors cursor-pointer hover:bg-white dark:hover:bg-zinc-800'
+    <div
+      tabIndex={-1}
+      className='absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 shadow-sm text-xs text-gray-700 dark:text-gray-300 pointer-events-none select-none'
     >
       <span className='font-mono font-semibold'>
         m2tv v{CURRENT_VERSION} ({COMMIT_ID})
@@ -67,7 +67,7 @@ function VersionDisplay() {
           )}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
