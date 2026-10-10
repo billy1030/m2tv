@@ -391,6 +391,8 @@ export default function VideoCard({
 
   return (
     <div
+      tabIndex={0}
+      data-tv-focusable='true'
       className='group relative w-full rounded-lg bg-transparent cursor-pointer transition-all duration-300 ease-in-out hover:scale-[1.05] hover:z-[500]'
       onClick={handleClick}
     >

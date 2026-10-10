@@ -1610,6 +1610,66 @@ function PlayPageClient() {
     }
   }, [Artplayer, Hls, videoUrl, loading, blockAdEnabled]);
 
+  // Android TV 遙控器播放快捷鍵監聽（左/右快進快退，Enter/Space播放暫停，下鍵開啟選集）
+  useEffect(() => {
+    const handleTVPlayerKeys = (e: KeyboardEvent) => {
+      if (!artPlayerRef.current) return;
+      const player = artPlayerRef.current;
+
+      // 如果當前焦點在輸入框或選集按鈕上，不攔截
+      const activeEl = document.activeElement;
+      if (
+        activeEl?.tagName === 'INPUT' ||
+        activeEl?.tagName === 'TEXTAREA' ||
+        activeEl?.getAttribute('data-tv-focusable') === 'true'
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          player.currentTime = Math.max(0, player.currentTime - 10);
+          player.notice.show = `⏪ 快退 -10s (${formatTime(
+            player.currentTime
+          )})`;
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          player.currentTime = Math.min(
+            player.duration,
+            player.currentTime + 10
+          );
+          player.notice.show = `⏩ 快進 +10s (${formatTime(
+            player.currentTime
+          )})`;
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          player.volume = Math.min(1, player.volume + 0.1);
+          player.notice.show = `🔊 音量 ${Math.round(player.volume * 100)}%`;
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          player.volume = Math.max(0, player.volume - 0.1);
+          player.notice.show = `🔉 音量 ${Math.round(player.volume * 100)}%`;
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          player.toggle();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleTVPlayerKeys);
+    return () => {
+      window.removeEventListener('keydown', handleTVPlayerKeys);
+    };
+  }, []);
+
   // 当组件卸载时清理定时器
   useEffect(() => {
     return () => {

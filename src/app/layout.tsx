@@ -13,6 +13,8 @@ import { DisplayModeProvider } from '../components/DisplayModeContext';
 import { GlobalErrorIndicator } from '../components/GlobalErrorIndicator';
 import { SiteProvider } from '../components/SiteProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
+import { TVNavigationProvider } from '../components/TVNavigationContext';
+import TVSpatialNavigator from '../components/TVSpatialNavigator';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -115,8 +117,11 @@ export default async function RootLayout({
         >
           <SiteProvider siteName={siteName} announcement={announcement}>
             <DisplayModeProvider>
-              {children}
-              <GlobalErrorIndicator />
+              <TVNavigationProvider>
+                <TVSpatialNavigator />
+                {children}
+                <GlobalErrorIndicator />
+              </TVNavigationProvider>
             </DisplayModeProvider>
           </SiteProvider>
         </ThemeProvider>

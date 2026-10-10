@@ -403,6 +403,8 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
               return (
                 <button
                   key={episodeNumber}
+                  tabIndex={0}
+                  data-tv-focusable='true'
                   onClick={() => handleEpisodeClick(episodeNumber - 1)}
                   className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 
                     ${
