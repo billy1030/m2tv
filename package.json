@@ -19,7 +19,8 @@
     "gen:version": "node scripts/generate-version.js",
     "postbuild": "echo 'Build completed - sitemap generation disabled'",
     "pages:build": "pnpm gen:runtime && pnpm gen:manifest && next build && npx @cloudflare/next-on-pages --experimental-minify",
-    "deploy": "pnpm pages:build && wrangler pages deploy .vercel/output/static"
+    "deploy": "pnpm pages:build && wrangler pages deploy .vercel/output/static",
+    "apk:build": "cd android-tv && ./gradlew assembleRelease && cp app/build/outputs/apk/release/app-release.apk ../moontv-tv.apk"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.12",

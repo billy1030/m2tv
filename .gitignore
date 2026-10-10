@@ -46,3 +46,9 @@ public/manifest.json
 public/sw.js
 public/workbox-*.js
 
+# Android build outputs & APKs
+*.apk
+android-tv/.gradle/
+android-tv/build/
+android-tv/app/build/
+

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">MoonTV</string>
+    <string name="default_url">https://m2tv2.pages.dev</string>
+</resources>
