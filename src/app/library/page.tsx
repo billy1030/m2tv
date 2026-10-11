@@ -45,18 +45,18 @@ const DEFAULT_OPTIONS: {
 } = {
   areas: [
     { label: '全部地區', value: '' },
-    { label: '中国大陆', value: '中国大陆' },
-    { label: '大陆', value: '大陆' },
-    { label: '日本', value: '日本' },
-    { label: '美国', value: '美国' },
-    { label: '内地', value: '内地' },
-    { label: '韩国', value: '韩国' },
-    { label: '英国', value: '英国' },
-    { label: '泰国', value: '泰国' },
-    { label: '台湾', value: '台湾' },
+    { label: '中國大陸', value: 'cn' },
+    { label: '中國香港', value: 'hk' },
+    { label: '中國台灣', value: 'tw' },
+    { label: '美國', value: 'us' },
+    { label: '日本', value: 'jp' },
+    { label: '韓國', value: 'kr' },
+    { label: '英國', value: 'uk' },
+    { label: '泰國', value: 'th' },
     {
       label: '其他',
-      value: '__other__:中国大陆,大陆,日本,美国,内地,韩国,英国,泰国,台湾',
+      value:
+        '__other__:中国大陆,大陆,内地,香港,中国香港,台湾,中国台湾,日本,美国,韩国,英国,泰国',
     },
   ],
   types: [

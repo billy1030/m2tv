@@ -233,8 +233,18 @@ const GENRE_MAP: Record<string, string[]> = {
 // 地区过滤映射（精准对齐采集站原生简体词及别名）
 const AREA_MAP: Record<string, string[]> = {
   cn: ['大陆', '中国大陆', '国产', '内地'],
-  hk: ['香港', '中国香港', '香港地区'],
-  tw: ['台湾', '中国台湾', '台剧'],
+  hk: [
+    '香港',
+    '中国香港',
+    '香港地区',
+    '港剧',
+    '香港剧',
+    '港台',
+    '港片',
+    '邵氏',
+    'TVB',
+  ],
+  tw: ['台湾', '中国台湾', '台剧', '台湾剧', '港台'],
   jp: ['日本', '日漫', '日剧', '日本动漫', '日本剧'],
   kr: ['韩国', '韩剧', '韩国剧', '日韩'],
   us: ['美国', '美剧', '美', '欧美', '欧美剧', '欧美动漫'],
@@ -369,7 +379,6 @@ export async function GET(request: Request) {
     }
 
     const primarySites = apiSites.slice(0, 3);
-    const startPg = (batch - 1) * PAGES_PER_FETCH + 1;
 
     // 为每个节点查找目标类型的对应 type_id 列表
     const targetTypeMap = new Map<string, number[]>();
@@ -382,7 +391,7 @@ export async function GET(request: Request) {
           const classes = await getSiteClasses(site);
           let matchedIds: number[] = [];
 
-          // 1. 如果指定了地区（如日本/大陆/台湾/美国/海外等）
+          // 1. 如果指定了地区（如香港/日本/大陆/台湾/美国/海外等）
           if (regionalWords.length > 0) {
             const matched = classes.filter((c) => {
               const name = c.type_name;
@@ -394,6 +403,36 @@ export async function GET(request: Request) {
               return matchesGenre && matchesArea;
             });
             matchedIds = matched.map((c) => c.type_id);
+
+            // 特殊处理：采集站绝大多数电影（动作/喜剧/爱情/剧情等）按题材划分，没有按国家划分专门的「香港电影」子类
+            // 因此当用户筛选了香港/台湾等地区，且处于电影板块（或全部板块）时，补充核心电影子分类，以便从中筛选出该地区的电影
+            if (
+              genreKey === 'movie' ||
+              (!genreKey &&
+                regionalWords.some(
+                  (rw) => rw.includes('港') || rw.includes('台')
+                ))
+            ) {
+              const CORE_MOVIE_GENRES = [
+                '动作',
+                '喜剧',
+                '剧情',
+                '爱情',
+                '犯罪',
+                '悬疑',
+                '邵氏',
+              ];
+              const movieSubClasses = classes.filter(
+                (c) =>
+                  CORE_MOVIE_GENRES.some((g) => c.type_name.includes(g)) &&
+                  (c.type_name.includes('片') || c.type_name.includes('电影'))
+              );
+              movieSubClasses.forEach((mc) => {
+                if (!matchedIds.includes(mc.type_id)) {
+                  matchedIds.push(mc.type_id);
+                }
+              });
+            }
           }
 
           // 2. 如果未限定地区，或者指定大板块类型 / 具体子类型（如动作片、科幻片、电视剧、短剧等）：
@@ -515,8 +554,7 @@ export async function GET(request: Request) {
             : idsToFetch.length > 1
             ? Math.min(2, PAGES_PER_FETCH)
             : PAGES_PER_FETCH;
-        const subStartPg =
-          idsToFetch.length > 1 ? (batch - 1) * effectivePages + 1 : startPg;
+        const subStartPg = (batch - 1) * effectivePages + 1;
         const subEndPg = subStartPg + effectivePages - 1;
 
         // 计算需要向采集站请求的年份列表
