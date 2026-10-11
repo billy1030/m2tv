@@ -429,13 +429,53 @@ export async function GET(request: Request) {
                 (c) => c.type_pid && parentIds.has(c.type_pid)
               );
               if (subClasses.length > 0) {
-                matchedIds = subClasses.map((c) => c.type_id);
+                // 如果指定了地区且是电影大类，优先选取最容易出产该地区电影的核心子分类（动作、喜剧、剧情、爱情、犯罪/悬疑、邵氏等）
+                // 避免发散到十几个冷门子类导致并发请求爆炸与超时
+                if (regionalWords.length > 0 && genreKey === 'movie') {
+                  const CORE_GENRES = [
+                    '动作',
+                    '喜剧',
+                    '剧情',
+                    '爱情',
+                    '犯罪',
+                    '悬疑',
+                    '邵氏',
+                  ];
+                  const coreSubClasses = subClasses.filter((c) =>
+                    CORE_GENRES.some((g) => c.type_name.includes(g))
+                  );
+                  matchedIds = (
+                    coreSubClasses.length > 0 ? coreSubClasses : subClasses
+                  )
+                    .slice(0, 6)
+                    .map((c) => c.type_id);
+                } else {
+                  matchedIds = subClasses.map((c) => c.type_id);
+                }
               } else {
                 // 若没有声明 type_pid，则按 allowedWords 进行模糊匹配
                 const matched = classes.filter((c) =>
                   allowedWords.some((w) => c.type_name.includes(w))
                 );
-                matchedIds = matched.map((c) => c.type_id);
+                if (regionalWords.length > 0 && genreKey === 'movie') {
+                  const CORE_GENRES = [
+                    '动作',
+                    '喜剧',
+                    '剧情',
+                    '爱情',
+                    '犯罪',
+                    '悬疑',
+                    '邵氏',
+                  ];
+                  const coreMatched = matched.filter((c) =>
+                    CORE_GENRES.some((g) => c.type_name.includes(g))
+                  );
+                  matchedIds = (coreMatched.length > 0 ? coreMatched : matched)
+                    .slice(0, 6)
+                    .map((c) => c.type_id);
+                } else {
+                  matchedIds = matched.map((c) => c.type_id);
+                }
               }
             } else {
               // 属于具体子分类名称（例如单选「动作片」、「科幻片」、「国产动漫」等）
@@ -460,13 +500,16 @@ export async function GET(request: Request) {
       const sep = site.api.includes('?') ? '&' : '?';
       const typeIds = targetTypeMap.get(site.key);
 
-      // 如果有子分类列表（例如动漫的多子类），遍历请求各子分类
+      // 如果有子分类列表（例如动漫的多子类、电影的多子类），遍历请求各子分类
       const idsToFetch = typeIds && typeIds.length > 0 ? typeIds : [null];
 
       for (const tId of idsToFetch) {
-        // 如果是多子类并发，每个子类取 1~2 页即可凑齐 100 部；如果是单分类，则取 PAGES_PER_FETCH 页
+        // 当筛选了地区时（如中国香港），采集站没有单独的香港电影专栏，只能从各电影分类中深度翻页筛选
+        // 因此如果指定了地区，即使是多子类，也提高每个子类的抓取深度（4页），确保能捞到足够多的港片！
         const effectivePages =
-          idsToFetch.length > 1
+          regionalWords.length > 0 && genreKey === 'movie'
+            ? 4
+            : idsToFetch.length > 1
             ? Math.min(2, PAGES_PER_FETCH)
             : PAGES_PER_FETCH;
         const subStartPg =
@@ -474,7 +517,6 @@ export async function GET(request: Request) {
         const subEndPg = subStartPg + effectivePages - 1;
 
         // 计算需要向采集站请求的年份列表
-        // 注意：采集站只能接收单一具体年份（如 &year=2026 或 &year=2018）。若不传 year，前几页全都是最新片（2026年），根本无法得到 2015~2019 或 2010 年前的片子！
         let yearsToFetch: (string | null)[] = [null];
         if (year) {
           if (/^\d{4}$/.test(year)) {
@@ -490,20 +532,6 @@ export async function GET(request: Request) {
             for (let y = endYear; y >= startYear; y--) {
               yearsToFetch.push(String(y));
             }
-          }
-        } else if (areaKey && genreKey === 'movie') {
-          // 当筛选特定地区（如香港、台湾、日本）的电影且选「全部年份」时：
-          // 采集站没有「香港电影」专类，所有电影混合在动作/喜剧/爱情片等子类中且全按最新更新排序。
-          // 若不传年份，前几页会被 2026 年占满，导致 2025、2024、2023 等年份完全出不来。
-          // 因此采用多年代智能交替采样：包含最新年份(2026)、近三年(2025, 2024, 2023)以及代表性年份
-          if (batch === 1) {
-            yearsToFetch = [null, '2025', '2024', '2023'];
-          } else if (batch === 2) {
-            yearsToFetch = [null, '2024', '2022', '2021'];
-          } else if (batch === 3) {
-            yearsToFetch = [null, '2023', '2020', '2019'];
-          } else {
-            yearsToFetch = [null];
           }
         }
 
