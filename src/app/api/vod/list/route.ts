@@ -504,10 +504,9 @@ export async function GET(request: Request) {
       const idsToFetch = typeIds && typeIds.length > 0 ? typeIds : [null];
 
       for (const tId of idsToFetch) {
-        // 当筛选了地区时（如中国香港），采集站没有单独的香港电影专栏，只能从各电影分类中深度翻页筛选
-        // 因此如果指定了地区，即使是多子类，也提高每个子类的抓取深度（4页），确保能捞到足够多的港片！
+        // 当筛选了地区时（如中国香港/日本/韩国/台湾等），若涉及多子类聚合，提高每个子类的抓取深度（4页），确保能捞到足够多的目标地区片源！
         const effectivePages =
-          regionalWords.length > 0 && genreKey === 'movie'
+          regionalWords.length > 0
             ? 4
             : idsToFetch.length > 1
             ? Math.min(2, PAGES_PER_FETCH)
@@ -695,9 +694,12 @@ export async function GET(request: Request) {
       }
     }
 
-    const yearNum = (y: string) => parseInt(y, 10) || 0;
+    const parseYearNum = (y: any) => {
+      const match = String(y || '').match(/\d{4}/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
     const aggregatedList = Array.from(aggMap.values())
-      .sort((a, b) => yearNum(b.year) - yearNum(a.year))
+      .sort((a, b) => parseYearNum(b.year) - parseYearNum(a.year))
       .slice(0, TARGET_ITEMS_PER_BATCH);
 
     const result = {

@@ -173,10 +173,23 @@ function LibraryPageClient() {
           setTotalCount(data.total || 0);
           setHasMore(Boolean(data.hasMore));
 
+          const parseYear = (y: any) => {
+            const match = String(y || '').match(/\d{4}/);
+            return match ? parseInt(match[0], 10) : 0;
+          };
+
           if (append) {
-            setItems((prev) => [...prev, ...(data.list || [])]);
+            setItems((prev) => {
+              const combined = [...prev, ...(data.list || [])];
+              return combined.sort(
+                (a, b) => parseYear(b.year) - parseYear(a.year)
+              );
+            });
           } else {
-            setItems(data.list || []);
+            const list = [...(data.list || [])];
+            setItems(
+              list.sort((a, b) => parseYear(b.year) - parseYear(a.year))
+            );
           }
         }
       } catch (err) {
