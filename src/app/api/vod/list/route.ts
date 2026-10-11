@@ -259,10 +259,14 @@ const AREA_MAP: Record<string, string[]> = {
 };
 
 // 缓存各节点的分类列表以获取 type_id
-const siteClassCache = new Map<
+export const siteClassCache = new Map<
   string,
   Array<{ type_id: number; type_pid?: number; type_name: string }>
 >();
+
+export function clearSiteClassCache(): void {
+  siteClassCache.clear();
+}
 
 async function getSiteClasses(
   site: any

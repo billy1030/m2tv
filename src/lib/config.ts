@@ -560,3 +560,8 @@ export async function getAvailableApiSites(): Promise<ApiSite[]> {
     detail: s.detail,
   }));
 }
+
+export function clearCachedConfig(): void {
+  (cachedConfig as any) = null;
+  (fileConfig as any) = null;
+}

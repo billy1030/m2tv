@@ -26,6 +26,7 @@ import {
   ChevronUp,
   Download,
   FolderOpen,
+  RotateCcw,
   Settings,
   Upload,
   Users,
@@ -1741,6 +1742,52 @@ function AdminPageClient() {
     }
   };
 
+  // 清除 7200s 缓存并强制重置
+  const handleClearCache = async () => {
+    const { isConfirmed } = await Swal.fire({
+      title: '確認清除緩存？',
+      text: '將清除服務端 7200 秒影視介面與分類緩存，並清空瀏覽器本地網絡緩存，即時拉取最新影視數據。',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '立即清除',
+      cancelButtonText: '取消',
+      confirmButtonColor: '#f59e0b',
+    });
+    if (!isConfirmed) return;
+
+    try {
+      const response = await fetch(`/api/admin/cache/clear`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error(`清除緩存失敗: ${response.status}`);
+      }
+
+      // 清除瀏覽器 CacheStorage (若存在)
+      if (typeof window !== 'undefined' && 'caches' in window) {
+        try {
+          const keys = await window.caches.keys();
+          await Promise.all(keys.map((k) => window.caches.delete(k)));
+        } catch (e) {
+          console.warn('清空瀏覽器 CacheStorage 忽略:', e);
+        }
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: '緩存已重置',
+        text: '服務端與本地緩存已清除，頁面即將刷新。',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      // 刷新頁面
+      window.location.reload();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : '清除緩存失敗');
+    }
+  };
+
   // 新增: 重置配置处理函数
   const handleResetConfig = async () => {
     const { isConfirmed } = await Swal.fire({
@@ -1826,6 +1873,14 @@ function AdminPageClient() {
                 >
                   <Upload size={13} />
                   導入配置
+                </button>
+                <button
+                  onClick={handleClearCache}
+                  className='flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg transition-colors shadow-xs'
+                  title='強制清除 7200 秒影視接口緩存與本機網絡緩存'
+                >
+                  <RotateCcw size={13} />
+                  清除緩存
                 </button>
                 <button
                   onClick={handleExportConfig}
