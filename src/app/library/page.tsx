@@ -277,7 +277,16 @@ function LibraryPageClient() {
             </h1>
             {totalCount > 0 && (
               <span className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-normal bg-gray-100 text-gray-500 border border-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700/60'>
-                已載入 {items.length} / 逾 {totalCount.toLocaleString()} 部
+                {selectedArea ? (
+                  <>
+                    已載入 {items.length} 部
+                    {hasMore ? ' (滾動載入更多)' : ' (已載入全部)'}
+                  </>
+                ) : (
+                  <>
+                    已載入 {items.length} / 逾 {totalCount.toLocaleString()} 部
+                  </>
+                )}
               </span>
             )}
             <button
