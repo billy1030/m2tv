@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import {
@@ -44,12 +45,14 @@ export default function LibraryStatsModal({
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLimit, setSelectedLimit] = useState<string>('1000');
 
-  const fetchStats = async () => {
+  const fetchStats = async (limitOverride?: string) => {
+    const limitToFetch = limitOverride || selectedLimit;
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/vod/stats?limit=1000');
+      const res = await fetch(`/api/vod/stats?limit=${limitToFetch}`);
       if (!res.ok) throw new Error('統計資料載入失敗');
       const json = await res.json();
       if (json.code === 200) {
@@ -65,11 +68,16 @@ export default function LibraryStatsModal({
     }
   };
 
+  const handleLimitChange = (newLimit: string) => {
+    setSelectedLimit(newLimit);
+    fetchStats(newLimit);
+  };
+
   useEffect(() => {
     if (isOpen && !data && !loading) {
       fetchStats();
     }
-  }, [isOpen, data, loading]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -101,30 +109,56 @@ export default function LibraryStatsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal 頂部 Header */}
-        <div className='flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50 backdrop-blur-sm'>
+        <div className='flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/50 backdrop-blur-sm flex-wrap gap-2'>
           <div className='flex items-center gap-2.5'>
-            <div className='w-8 h-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center'>
+            <div className='w-8 h-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0'>
               <BarChart3 className='w-5 h-5' />
             </div>
             <div>
-              <h2 className='text-base sm:text-lg font-bold flex items-center gap-2'>
-                片庫大數據抽樣統計分析
+              <div className='flex items-center gap-2 flex-wrap'>
+                <h2 className='text-base sm:text-lg font-bold'>
+                  片庫大數據抽樣統計分析
+                </h2>
                 {data && (
                   <span className='text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'>
                     實測 {data.sampleCount.toLocaleString()} 部真實卡片
                   </span>
                 )}
-              </h2>
+              </div>
               <p className='text-[11px] sm:text-xs text-gray-500 dark:text-gray-400'>
-                從 4~9
-                號片庫採集節點即時抽取真實資料，點擊標籤可直接在連結中索取篩選
+                從片庫採集節點即時抽取真實資料，點擊標籤可直接在片庫中索取篩選
               </p>
             </div>
           </div>
 
-          <div className='flex items-center gap-1.5'>
+          <div className='flex items-center gap-2 shrink-0'>
+            {/* 抽样数量选择器 */}
+            <div className='flex items-center bg-gray-200/70 dark:bg-gray-800 rounded-lg p-0.5 text-xs font-medium'>
+              {[
+                { label: '500部', value: '500' },
+                { label: '1,000部', value: '1000' },
+                { label: '2,000部', value: '2000' },
+                { label: '5,000部', value: '5000' },
+                { label: '全量深度', value: 'all' },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type='button'
+                  disabled={loading}
+                  onClick={() => handleLimitChange(opt.value)}
+                  className={`px-2 py-1 rounded-md transition-all ${
+                    selectedLimit === opt.value
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm font-semibold'
+                      : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
             <button
-              onClick={fetchStats}
+              onClick={() => fetchStats()}
               disabled={loading}
               title='重新整理統計'
               className='p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors disabled:opacity-50'
@@ -160,7 +194,7 @@ export default function LibraryStatsModal({
             <div className='p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm flex items-center justify-between'>
               <span>{error}</span>
               <button
-                onClick={fetchStats}
+                onClick={() => fetchStats()}
                 className='px-3 py-1 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700'
               >
                 重試

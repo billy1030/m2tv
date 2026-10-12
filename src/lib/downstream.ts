@@ -10,6 +10,7 @@ interface ApiSearchItem {
   vod_play_url?: string;
   vod_class?: string;
   vod_year?: string;
+  vod_area?: string;
   vod_content?: string;
   vod_douban_id?: number;
   type_name?: string;
@@ -87,6 +88,10 @@ export async function searchFromApi(
         desc: cleanHtmlTags(item.vod_content || ''),
         type_name: item.type_name,
         douban_id: item.vod_douban_id,
+        area: item.vod_area?.trim() || '',
+        type:
+          item.type_name?.trim() ||
+          (item.vod_class ? item.vod_class.split(',')[0].trim() : ''),
       };
     });
 
@@ -160,6 +165,10 @@ export async function searchFromApi(
                 desc: cleanHtmlTags(item.vod_content || ''),
                 type_name: item.type_name,
                 douban_id: item.vod_douban_id,
+                area: item.vod_area?.trim() || '',
+                type:
+                  item.type_name?.trim() ||
+                  (item.vod_class ? item.vod_class.split(',')[0].trim() : ''),
               };
             });
           } catch (error) {

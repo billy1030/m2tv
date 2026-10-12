@@ -83,10 +83,11 @@ const TYPE_TO_PARAM: Record<string, string> = {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const sampleLimit = Math.min(
-    1500,
-    Math.max(200, parseInt(searchParams.get('limit') || '1000', 10))
-  );
+  const limitParam = searchParams.get('limit') || '1000';
+  const isFullScan = limitParam === 'all' || limitParam === '0';
+  const sampleLimit = isFullScan
+    ? 10000
+    : Math.min(10000, Math.max(200, parseInt(limitParam, 10) || 1000));
 
   try {
     const apiSites = await getAvailableApiSites();
@@ -94,8 +95,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: '无可用节点' }, { status: 400 });
     }
 
-    const primarySites = apiSites.slice(0, 5);
-    const pagesPerSite = Math.ceil(sampleLimit / (primarySites.length * 20));
+    const primarySites = apiSites.slice(0, 6);
+    // 每个节点拉取的页数（每页约 20 部），如果是全量则拉取更多页
+    const pagesPerSite = isFullScan
+      ? 20
+      : Math.min(25, Math.ceil(sampleLimit / (primarySites.length * 20)));
 
     const tasks: Promise<any>[] = [];
     for (const site of primarySites) {

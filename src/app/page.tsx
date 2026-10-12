@@ -261,7 +261,8 @@ function HomeClient() {
                             douban_id={movie.id}
                             rate={movie.rate}
                             year={movie.year}
-                            type='movie'
+                            area={movie.area}
+                            type={movie.type || '電影'}
                           />
                         </div>
                       ))}
@@ -303,6 +304,8 @@ function HomeClient() {
                             douban_id={show.id}
                             rate={show.rate}
                             year={show.year}
+                            area={show.area}
+                            type={show.type || '劇集'}
                           />
                         </div>
                       ))}
@@ -344,6 +347,8 @@ function HomeClient() {
                             douban_id={show.id}
                             rate={show.rate}
                             year={show.year}
+                            area={show.area}
+                            type={show.type || '綜藝'}
                           />
                         </div>
                       ))}

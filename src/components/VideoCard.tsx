@@ -120,6 +120,15 @@ export default function VideoCard({
   );
   const actualEpisodes = aggregateData?.mostFrequentEpisodes ?? episodes;
   const actualYear = aggregateData?.first.year ?? year;
+  const actualArea = aggregateData?.first.area ?? area;
+  const rawType =
+    aggregateData?.first.type_name ?? aggregateData?.first.type ?? type;
+  const actualType =
+    rawType?.toLowerCase() === 'movie'
+      ? '電影'
+      : rawType?.toLowerCase() === 'tv'
+      ? '劇集'
+      : rawType;
   const actualQuery = query || '';
   const actualSearchType = isAggregate
     ? aggregateData?.first.episodes?.length === 1
@@ -569,7 +578,7 @@ export default function VideoCard({
               {actualYear}
             </span>
           )}
-          {area && (
+          {actualArea && (
             <span
               className={`inline-block font-medium rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 ${
                 isTv
@@ -577,10 +586,10 @@ export default function VideoCard({
                   : 'text-[10px] sm:text-[11px] px-1.5 py-0.5'
               }`}
             >
-              {area}
+              {actualArea}
             </span>
           )}
-          {type && !['movie', 'tv'].includes(type.toLowerCase()) && (
+          {actualType && (
             <span
               className={`inline-block font-medium rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 ${
                 isTv
@@ -588,7 +597,7 @@ export default function VideoCard({
                   : 'text-[10px] sm:text-[11px] px-1.5 py-0.5'
               }`}
             >
-              {type}
+              {actualType}
             </span>
           )}
           {config.showSourceName && source_name && (

@@ -7,6 +7,7 @@ import React, {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -113,6 +114,34 @@ function LibraryPageClient() {
     useState<string>('duanju');
   const [isStatsOpen, setIsStatsOpen] = useState(false);
 
+  // 缓存用户在当前大类（如 movie/tv/anime/duanju/variety）下使用过的原生特色动态标签
+  const cacheKey = `lib_cached_tags_${typeParam || 'all'}`;
+  const [cachedCategoryTags, setCachedCategoryTags] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(cacheKey);
+        return stored ? JSON.parse(stored) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const handleSelectCategory = (catVal: string) => {
+    setSelectedCategory(catVal);
+    // 若用户点击了原生动态标签，自动学习存入 browser cache
+    if (catVal && !catVal.startsWith('__other__:')) {
+      if (typeof window !== 'undefined') {
+        const updated = Array.from(
+          new Set([catVal, ...cachedCategoryTags])
+        ).slice(0, 12);
+        setCachedCategoryTags(updated);
+        localStorage.setItem(cacheKey, JSON.stringify(updated));
+      }
+    }
+  };
+
   const isDuanjuMode =
     typeParam === 'duanju' ||
     selectedCategory === 'duanju' ||
@@ -124,6 +153,16 @@ function LibraryPageClient() {
     setSelectedYear(yearParam || '');
     setSelectedArea(areaParam);
     setSelectedDuanjuTheme('duanju');
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(
+          `lib_cached_tags_${typeParam || 'all'}`
+        );
+        setCachedCategoryTags(stored ? JSON.parse(stored) : []);
+      } catch {
+        setCachedCategoryTags([]);
+      }
+    }
   }, [typeParam, yearParam, areaParam]);
 
   // batch 代表第几批（每批 100 部）
@@ -261,9 +300,9 @@ function LibraryPageClient() {
       ? '綜藝精選直連'
       : '片庫聚合直連';
 
-  // 映射当前 4~9 的导航路径，获取对应的 10 项精准筛选配置
+  // 映射当前 4~9 的导航路径，获取对应的基础筛选配置
   const activePath = typeParam ? `/library?type=${typeParam}` : '/library';
-  const currentFilters =
+  const rawBaseFilters =
     (
       libraryOptionsData as Record<
         string,
@@ -275,11 +314,78 @@ function LibraryPageClient() {
       >
     )[activePath] || DEFAULT_OPTIONS;
 
+  // 三层式融合：基础 Default + 本地 Browser Cache + 本次列表實時萃取的原生標籤
+  const currentFilters = useMemo(() => {
+    const baseTypes = [...rawBaseFilters.types];
+
+    // 从当前拉取到的片单中实时提取高频原生标签（除去已有的和其他）
+    const discoveredCount = new Map<string, number>();
+    items.forEach((it) => {
+      const t = it.type_name?.trim();
+      if (
+        t &&
+        !baseTypes.some((bt) => bt.value === t || bt.label === t) &&
+        !t.startsWith('__other__')
+      ) {
+        discoveredCount.set(t, (discoveredCount.get(t) || 0) + 1);
+      }
+    });
+
+    const discoveredTags = Array.from(discoveredCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([name]) => name);
+
+    // 将 Browser Cache 历史已存标签 与 新发掘标签合并加入
+    const allCustomTags = Array.from(
+      new Set([...cachedCategoryTags, ...discoveredTags])
+    );
+
+    const mergedTypes: FilterOption[] = [];
+    // 1. 保留「全部類型」
+    const allOption = baseTypes.find((bt) => bt.value === '');
+    if (allOption) mergedTypes.push(allOption);
+
+    // 2. 加入主要預設類型（排除「其他」）
+    baseTypes.forEach((bt) => {
+      if (bt.value !== '' && !bt.value.startsWith('__other__:')) {
+        mergedTypes.push(bt);
+      }
+    });
+
+    // 3. 注入 Browser Cache 及動態發掘的特色標籤
+    allCustomTags.forEach((tag) => {
+      if (!mergedTypes.some((mt) => mt.value === tag || mt.label === tag)) {
+        mergedTypes.push({ label: tag, value: tag });
+      }
+    });
+
+    // 4. 若有當前選中但未包含的，補齊
+    if (
+      selectedCategory &&
+      !selectedCategory.startsWith('__other__:') &&
+      !mergedTypes.some((mt) => mt.value === selectedCategory)
+    ) {
+      mergedTypes.push({ label: selectedCategory, value: selectedCategory });
+    }
+
+    // 5. 放上最後的「其他」按鈕
+    const otherOption = baseTypes.find((bt) =>
+      bt.value.startsWith('__other__:')
+    );
+    if (otherOption) mergedTypes.push(otherOption);
+
+    return {
+      ...rawBaseFilters,
+      types: mergedTypes,
+    };
+  }, [rawBaseFilters, items, cachedCategoryTags, selectedCategory]);
+
   return (
     <PageLayout activePath={activePath}>
       <div
-        className={`px-2 sm:px-6 pb-2 sm:pb-4 mx-auto ${
-          mode === 'tv' ? 'max-w-none' : 'max-w-7xl'
+        className={`px-2 sm:px-6 pb-2 sm:pb-4 overflow-visible ${
+          mode === 'tv' ? 'max-w-none' : ''
         }`}
       >
         {/* 顶部标题栏：直接貼頂吸頂停留（top-0），零初始間距，完全無滑動跳動 */}
@@ -342,7 +448,7 @@ function LibraryPageClient() {
                             <button
                               key={tab.value || 'all-type'}
                               type='button'
-                              onClick={() => setSelectedCategory(tab.value)}
+                              onClick={() => handleSelectCategory(tab.value)}
                               className={`text-xs py-1.5 px-2 rounded-lg transition-all font-medium text-center truncate ${
                                 active
                                   ? 'bg-green-600 text-white shadow-md ring-2 ring-green-400'
@@ -369,7 +475,7 @@ function LibraryPageClient() {
                       <button
                         key={tab.value || 'all-type'}
                         type='button'
-                        onClick={() => setSelectedCategory(tab.value)}
+                        onClick={() => handleSelectCategory(tab.value)}
                         className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
                           active
                             ? 'bg-green-600 text-white shadow-sm'

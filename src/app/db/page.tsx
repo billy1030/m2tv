@@ -4,7 +4,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getDoubanCategories, getDoubanList } from '@/lib/db.media.client';
 import { DoubanItem, DoubanResult } from '@/lib/types';
@@ -35,11 +35,19 @@ function DoubanPageClient() {
     Array<{ name: string; type: 'movie' | 'tv'; query: string }>
   >([]);
 
-  // 选择器状态 - 完全独立，不依赖URL参数
+  // 选择器状态 - 从 browser cache (localStorage) 读取，实现记住用户上次选择
   const [primarySelection, setPrimarySelection] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(`db_cached_primary_${type}`);
+      if (cached) return cached;
+    }
     return type === 'movie' ? '热门' : '';
   });
   const [secondarySelection, setSecondarySelection] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem(`db_cached_secondary_${type}`);
+      if (cached) return cached;
+    }
     if (type === 'movie') return '全部';
     if (type === 'tv') return 'tv';
     if (type === 'show') return 'show';
@@ -53,6 +61,79 @@ function DoubanPageClient() {
       setCustomCategories(runtimeConfig.CUSTOM_CATEGORIES);
     }
   }, []);
+
+  // 动态筛选状态与 Browser Cache（针对豆瓣电影、剧集、综艺）
+  const [selectedYear, setSelectedYear] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`db_filter_year_${type}`) || 'all';
+    }
+    return 'all';
+  });
+
+  const [selectedGenre, setSelectedGenre] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(`db_filter_genre_${type}`) || 'all';
+    }
+    return 'all';
+  });
+
+  // Browser Cache 记住的历史使用过题材标签
+  const [cachedGenreTags, setCachedGenreTags] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(`db_custom_genres_${type}`);
+        if (stored) return JSON.parse(stored);
+      } catch (e) {
+        // ignore
+      }
+    }
+    return [];
+  });
+
+  // 当选择不同子页面时，同步更新筛选状态
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSelectedYear(localStorage.getItem(`db_filter_year_${type}`) || 'all');
+      setSelectedGenre(
+        localStorage.getItem(`db_filter_genre_${type}`) || 'all'
+      );
+      try {
+        const stored = localStorage.getItem(`db_custom_genres_${type}`);
+        setCachedGenreTags(stored ? JSON.parse(stored) : []);
+      } catch (e) {
+        setCachedGenreTags([]);
+      }
+    }
+  }, [type]);
+
+  // 当用户点击题材标签时，自动记录进 Browser Cache
+  const handleSelectGenre = useCallback(
+    (genre: string) => {
+      setSelectedGenre(genre);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`db_filter_genre_${type}`, genre);
+        if (genre !== 'all' && !cachedGenreTags.includes(genre)) {
+          const updated = [...cachedGenreTags, genre].slice(-15);
+          setCachedGenreTags(updated);
+          localStorage.setItem(
+            `db_custom_genres_${type}`,
+            JSON.stringify(updated)
+          );
+        }
+      }
+    },
+    [type, cachedGenreTags]
+  );
+
+  const handleSelectYear = useCallback(
+    (year: string) => {
+      setSelectedYear(year);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`db_filter_year_${type}`, year);
+      }
+    },
+    [type]
+  );
 
   // 初始化时标记选择器为准备好状态
   useEffect(() => {
@@ -96,20 +177,26 @@ function DoubanPageClient() {
         }
       }
     } else {
-      // 原有逻辑
-      if (type === 'movie') {
-        setPrimarySelection('热门');
-        setSecondarySelection('全部');
-      } else if (type === 'tv') {
-        setPrimarySelection('');
-        setSecondarySelection('tv');
-      } else if (type === 'show') {
-        setPrimarySelection('');
-        setSecondarySelection('show');
-      } else {
-        setPrimarySelection('');
-        setSecondarySelection('全部');
+      // 从 browser cache 恢复上次在该 type 下的选择，没有则使用默认
+      let pVal = type === 'movie' ? '热门' : '';
+      let sVal =
+        type === 'movie'
+          ? '全部'
+          : type === 'tv'
+          ? 'tv'
+          : type === 'show'
+          ? 'show'
+          : '全部';
+
+      if (typeof window !== 'undefined') {
+        const cachedP = localStorage.getItem(`db_cached_primary_${type}`);
+        if (cachedP !== null) pVal = cachedP;
+        const cachedS = localStorage.getItem(`db_cached_secondary_${type}`);
+        if (cachedS !== null) sVal = cachedS;
       }
+
+      setPrimarySelection(pVal);
+      setSecondarySelection(sVal);
     }
 
     // 使用短暂延迟确保状态更新完成后标记选择器准备好
@@ -324,6 +411,10 @@ function DoubanPageClient() {
       if (value !== primarySelection) {
         setLoading(true);
 
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`db_cached_primary_${type}`, value);
+        }
+
         // 如果是自定义分类模式，同时更新一级和二级选择器
         if (type === 'custom' && customCategories.length > 0) {
           const firstCategory = customCategories.find(
@@ -333,6 +424,12 @@ function DoubanPageClient() {
             // 批量更新状态，避免多次触发数据加载
             setPrimarySelection(value);
             setSecondarySelection(firstCategory.query);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(
+                `db_cached_secondary_${type}`,
+                firstCategory.query
+              );
+            }
           } else {
             setPrimarySelection(value);
           }
@@ -350,9 +447,12 @@ function DoubanPageClient() {
       if (value !== secondarySelection) {
         setLoading(true);
         setSecondarySelection(value);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`db_cached_secondary_${type}`, value);
+        }
       }
     },
-    [secondarySelection]
+    [secondarySelection, type]
   );
 
   const getPageTitle = () => {
@@ -375,6 +475,139 @@ function DoubanPageClient() {
     return activePath;
   };
 
+  // 默认常用题材
+  const DEFAULT_GENRES: Record<string, string[]> = {
+    movie: [
+      '剧情',
+      '喜剧',
+      '动作',
+      '科幻',
+      '悬疑',
+      '恐怖',
+      '爱情',
+      '动画',
+      '犯罪',
+      '惊悚',
+    ],
+    tv: [
+      '剧情',
+      '喜剧',
+      '爱情',
+      '古装',
+      '悬疑',
+      '犯罪',
+      '都市',
+      '科幻',
+      '武侠',
+      '真人秀',
+    ],
+    show: ['真人秀', '脱口秀', '音乐', '搞笑', '游戏', '竞技', '旅行', '美食'],
+  };
+
+  // 动态融合三层：默认常用 + Browser Cache 历史 + 当前片单实时发掘
+  const dynamicGenres = useMemo(() => {
+    const base = DEFAULT_GENRES[type] || ['剧情', '喜剧', '爱情', '动作'];
+    // 发现当前片单中的题材
+    const discovered = new Set<string>();
+    doubanData.forEach((item) => {
+      if (item.type) {
+        item.type.split(/\s+/).forEach((t) => {
+          if (t && t.length <= 6 && !base.includes(t)) {
+            discovered.add(t);
+          }
+        });
+      }
+    });
+
+    const allCustom = Array.from(
+      new Set([...cachedGenreTags, ...Array.from(discovered)])
+    );
+    return [
+      { label: '全部類型', value: 'all' },
+      ...base.map((g) => ({ label: g, value: g })),
+      ...allCustom
+        .filter((g) => !base.includes(g))
+        .map((g) => ({ label: g, value: g })),
+    ];
+  }, [type, doubanData, cachedGenreTags]);
+
+  // 动态年份选项：涵盖新片至过往年份
+  const dynamicYears = useMemo(() => {
+    // 提取当前片单中出现的年份
+    const yearsSet = new Set<string>();
+    doubanData.forEach((item) => {
+      if (item.year && /^\d{4}$/.test(item.year)) {
+        yearsSet.add(item.year);
+      }
+    });
+
+    const currentYear = new Date().getFullYear();
+    const futureYear = (currentYear + 1).toString();
+
+    return [
+      { label: '全部年份', value: 'all' },
+      { label: `${futureYear}年`, value: futureYear },
+      { label: `${currentYear}年`, value: currentYear.toString() },
+      { label: `${currentYear - 1}年`, value: (currentYear - 1).toString() },
+      { label: `${currentYear - 2}年`, value: (currentYear - 2).toString() },
+      {
+        label: `${currentYear - 5}-${currentYear - 3}年`,
+        value: `${currentYear - 5}-${currentYear - 3}`,
+      },
+      { label: '更早', value: 'earlier' },
+    ];
+  }, [doubanData]);
+
+  // 根据当前选中的年份与类型进行客户端过滤
+  const filteredDoubanData = useMemo(() => {
+    return doubanData.filter((item) => {
+      // 1. 年份过滤
+      if (selectedYear !== 'all') {
+        const itemYear = parseInt(item.year, 10);
+        const currentYear = new Date().getFullYear();
+        if (
+          selectedYear === (currentYear + 1).toString() &&
+          item.year !== (currentYear + 1).toString()
+        )
+          return false;
+        if (
+          selectedYear === currentYear.toString() &&
+          item.year !== currentYear.toString()
+        )
+          return false;
+        if (
+          selectedYear === (currentYear - 1).toString() &&
+          item.year !== (currentYear - 1).toString()
+        )
+          return false;
+        if (
+          selectedYear === (currentYear - 2).toString() &&
+          item.year !== (currentYear - 2).toString()
+        )
+          return false;
+        if (selectedYear === `${currentYear - 5}-${currentYear - 3}`) {
+          if (
+            isNaN(itemYear) ||
+            itemYear < currentYear - 5 ||
+            itemYear > currentYear - 3
+          )
+            return false;
+        }
+        if (selectedYear === 'earlier') {
+          if (isNaN(itemYear) || itemYear >= currentYear - 5) return false;
+        }
+      }
+
+      // 2. 题材/类型过滤
+      if (selectedGenre !== 'all') {
+        const itemType = item.type || '';
+        if (!itemType.includes(selectedGenre)) return false;
+      }
+
+      return true;
+    });
+  }, [doubanData, selectedYear, selectedGenre]);
+
   const { mode, gridClass } = useDisplayMode();
 
   return (
@@ -390,6 +623,13 @@ function DoubanPageClient() {
             <h1 className='text-lg sm:text-2xl font-bold text-gray-800 dark:text-gray-200'>
               {getPageTitle()}
             </h1>
+            {filteredDoubanData.length > 0 && (
+              <span className='text-xs text-gray-500 dark:text-gray-400'>
+                {selectedYear !== 'all' || selectedGenre !== 'all'
+                  ? `篩選中：${filteredDoubanData.length} / ${doubanData.length} 部`
+                  : `已載入 ${doubanData.length} 部`}
+              </span>
+            )}
           </div>
         </div>
 
@@ -417,6 +657,59 @@ function DoubanPageClient() {
               />
             </div>
           )}
+
+          {/* Dynamic Filter 动态筛选栏（年份 + 类型） */}
+          {type !== 'custom' && (
+            <div className='bg-white/60 dark:bg-gray-800/40 rounded-xl p-2 sm:p-2.5 border border-gray-200/30 dark:border-gray-700/30 space-y-2 backdrop-blur-sm'>
+              {/* 1. 动态类型/题材筛选 */}
+              <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5'>
+                <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0'>
+                  類型:
+                </span>
+                {dynamicGenres.map((g) => {
+                  const active = selectedGenre === g.value;
+                  return (
+                    <button
+                      key={g.value}
+                      type='button'
+                      onClick={() => handleSelectGenre(g.value)}
+                      className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
+                        active
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 2. 动态年份筛选 */}
+              <div className='flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5'>
+                <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0'>
+                  年份:
+                </span>
+                {dynamicYears.map((y) => {
+                  const active = selectedYear === y.value;
+                  return (
+                    <button
+                      key={y.value}
+                      type='button'
+                      onClick={() => handleSelectYear(y.value)}
+                      className={`text-xs px-2.5 py-0.5 rounded-full transition-colors font-medium shrink-0 ${
+                        active
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {y.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 内容展示区域 */}
@@ -427,7 +720,7 @@ function DoubanPageClient() {
               ? // 显示骨架屏
                 skeletonData.map((index) => <DoubanCardSkeleton key={index} />)
               : // 显示实际数据
-                doubanData.map((item, index) => (
+                filteredDoubanData.map((item, index) => (
                   <div key={`${item.title}-${index}`} className='w-full'>
                     <VideoCard
                       from='douban'
@@ -436,10 +729,28 @@ function DoubanPageClient() {
                       douban_id={item.id}
                       rate={item.rate}
                       year={item.year}
-                      type={type === 'movie' ? 'movie' : ''} // 电影类型严格控制，tv 不控
+                      area={item.area}
+                      type={
+                        item.type ||
+                        (type === 'movie'
+                          ? '電影'
+                          : type === 'tv'
+                          ? '劇集'
+                          : type === 'show'
+                          ? '綜藝'
+                          : '')
+                      }
                     />
                   </div>
                 ))}
+            {!loading &&
+              selectorsReady &&
+              filteredDoubanData.length === 0 &&
+              doubanData.length > 0 && (
+                <div className='col-span-full text-center text-gray-500 py-12 dark:text-gray-400 text-sm'>
+                  當前篩選條件下暫無匹配影片，可嘗試切換其他年份或類型
+                </div>
+              )}
           </div>
 
           {/* 加载更多指示器 */}

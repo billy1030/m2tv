@@ -46,22 +46,420 @@ function SearchPageClient() {
   const [viewMode, setViewMode] = useState<'agg' | 'all'>(() => {
     return getDefaultAggregate() ? 'agg' : 'all';
   });
-  const [selectedYear, setSelectedYear] = useState<string>('all');
 
-  // 年份过滤后的搜索结果
+  // 读取已保存的过滤器设置或历史偏好
+  const [selectedYear, setSelectedYear] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('search_cached_year') || 'all';
+    }
+    return 'all';
+  });
+  const [selectedArea, setSelectedArea] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('search_cached_area') || 'all';
+    }
+    return 'all';
+  });
+  const [selectedType, setSelectedType] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('search_cached_type') || 'all';
+    }
+    return 'all';
+  });
+
+  // 记录用户在历史搜尋中曾選擇/用過的動態類型標籤（最多記錄 15 個）
+  const [cachedCustomTypes, setCachedCustomTypes] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('search_custom_tags_cache');
+        return stored ? JSON.parse(stored) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const handleSelectYear = (yr: string) => {
+    setSelectedYear(yr);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('search_cached_year', yr);
+    }
+  };
+
+  const handleSelectArea = (ar: string) => {
+    setSelectedArea(ar);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('search_cached_area', ar);
+    }
+  };
+
+  const handleSelectType = (tp: string) => {
+    setSelectedType(tp);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('search_cached_type', tp);
+      if (tp.startsWith('raw:')) {
+        const tag = tp.replace('raw:', '');
+        const updated = Array.from(new Set([tag, ...cachedCustomTypes])).slice(
+          0,
+          15
+        );
+        setCachedCustomTypes(updated);
+        localStorage.setItem(
+          'search_custom_tags_cache',
+          JSON.stringify(updated)
+        );
+      }
+    }
+  };
+
+  // 区域关键词映射（支持简繁及别名）
+  const AREA_SEARCH_MAP: Record<string, string[]> = {
+    cn: [
+      '大陆',
+      '大陸',
+      '内地',
+      '內地',
+      '中国大陆',
+      '中國大陸',
+      '国产',
+      '國產',
+    ],
+    hk: ['香港', '中国香港', '中國香港', '港剧', '港劇', '港片', 'TVB'],
+    tw: ['台湾', '台灣', '中国台湾', '中國台灣', '台剧', '台劇'],
+    jp: ['日本', '日漫', '日剧', '日劇', '日本动漫', '日本動漫'],
+    kr: ['韩国', '韓國', '韩剧', '韓劇', '韩国剧', '韓國劇'],
+    us: ['美国', '美國', '美剧', '美劇', '欧美', '歐美', '欧美剧', '歐美劇'],
+    uk: ['英国', '英國', '英剧', '英劇'],
+    th: ['泰国', '泰國', '泰剧', '泰劇'],
+  };
+
+  // 类型关键词映射
+  const TYPE_SEARCH_MAP: Record<string, string[]> = {
+    movie: [
+      '电影',
+      '電影',
+      '动作',
+      '喜劇',
+      '喜剧',
+      '爱情',
+      '愛情',
+      '科幻',
+      '恐怖',
+      '剧情',
+      '劇情',
+      '战争',
+      '戰爭',
+      '纪录',
+      '紀錄',
+    ],
+    tv: ['剧', '劇', '电视剧', '電視劇', '连续剧', '連續劇'],
+    anime: ['动漫', '動漫', '动画', '動畫'],
+    show: ['综艺', '綜藝', '真人秀'],
+    duanju: ['短剧', '短劇', '爽文', '总裁', '總裁'],
+  };
+
+  // 区分短剧关键词（防止短剧因集数或题材被误判为电影/电视剧）
+  const DUANJU_KEYWORDS = [
+    '短剧',
+    '短劇',
+    '爽文',
+    '反转',
+    '反轉',
+    '总裁',
+    '總裁',
+    '现代都市',
+    '現代都市',
+    '现代言情',
+    '現代言情',
+    '都市脑洞',
+    '都市腦洞',
+    'AI漫剧',
+    'AI漫劇',
+    '漫剧',
+    '漫劇',
+    '战神',
+    '戰神',
+    '女恋',
+    '女戀',
+    '甜宠',
+    '甜寵',
+    '古装仙侠',
+    '古裝仙俠',
+  ];
+
+  // 预设核心大类
+  const DEFAULT_TYPES = [
+    { label: '電影', value: 'movie' },
+    { label: '劇集', value: 'tv' },
+    { label: '動漫', value: 'anime' },
+    { label: '綜藝', value: 'show' },
+    { label: '短劇', value: 'duanju' },
+  ];
+
+  // 动态计算在当前搜索结果中出现的类型列表
+  const availableTypes = useMemo(() => {
+    if (!searchResults.length)
+      return [{ label: '全部類型', value: 'all' }, ...DEFAULT_TYPES];
+
+    // 统计各原生分类出现的次数
+    const rawTagCount = new Map<string, number>();
+    let hasMovie = false;
+    let hasTv = false;
+    let hasAnime = false;
+    let hasShow = false;
+    let hasDuanju = false;
+
+    searchResults.forEach((item) => {
+      const typeStr = (item.type_name || item.type || '').trim();
+      const epLen = item.episodes?.length || 0;
+      const isDuanju =
+        DUANJU_KEYWORDS.some((w) => typeStr.includes(w)) ||
+        item.title.includes('短剧') ||
+        item.title.includes('爽文') ||
+        epLen > 30;
+
+      if (isDuanju) {
+        hasDuanju = true;
+      } else if (
+        TYPE_SEARCH_MAP.anime.some((w) => typeStr.includes(w)) ||
+        typeStr.includes('漫')
+      ) {
+        hasAnime = true;
+      } else if (TYPE_SEARCH_MAP.show.some((w) => typeStr.includes(w))) {
+        hasShow = true;
+      } else if (
+        TYPE_SEARCH_MAP.movie.some((w) => typeStr.includes(w)) ||
+        (epLen === 1 && !typeStr.includes('剧') && !typeStr.includes('劇'))
+      ) {
+        hasMovie = true;
+      } else if (
+        TYPE_SEARCH_MAP.tv.some((w) => typeStr.includes(w)) ||
+        epLen > 1
+      ) {
+        hasTv = true;
+      }
+
+      // 如果有具体的原生标签（例如：'现代都市'、'爽文短剧'、'动作片'、'科幻'、'古装仙侠'），且不是过于宽泛的
+      if (typeStr && !['movie', 'tv', 'show'].includes(typeStr.toLowerCase())) {
+        rawTagCount.set(typeStr, (rawTagCount.get(typeStr) || 0) + 1);
+      }
+    });
+
+    const options: { label: string; value: string }[] = [
+      { label: '全部類型', value: 'all' },
+    ];
+
+    // 添加有结果的标准大类
+    if (hasMovie) options.push({ label: '電影', value: 'movie' });
+    if (hasTv) options.push({ label: '劇集', value: 'tv' });
+    if (hasAnime) options.push({ label: '動漫', value: 'anime' });
+    if (hasShow) options.push({ label: '綜藝', value: 'show' });
+    if (hasDuanju) options.push({ label: '短劇', value: 'duanju' });
+
+    // 动态添加搜索结果中出现频次较高的原生具体细分标签（排除已完全同名的大类）
+    const sortedRawTags = Array.from(rawTagCount.entries())
+      .filter(
+        ([tag]) => !['电影', '电视剧', '动漫', '综艺', '短剧'].includes(tag)
+      )
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8); // 最多追加 8 个最匹配的高频子类型（如：现代都市、AI漫剧、爽文短剧、动作片）
+
+    sortedRawTags.forEach(([tag]) => {
+      // 避免重复
+      if (!options.some((o) => o.label === tag)) {
+        options.push({ label: tag, value: `raw:${tag}` });
+      }
+    });
+
+    // 融入从 browser cache 记录的常用/历史 dynamic filter
+    cachedCustomTypes.forEach((cachedTag) => {
+      if (
+        !options.some(
+          (o) => o.label === cachedTag || o.value === `raw:${cachedTag}`
+        )
+      ) {
+        options.push({ label: cachedTag, value: `raw:${cachedTag}` });
+      }
+    });
+
+    // 如果当前选中的类型既不是 all 也还没在 options 列表中，将其补齐加入
+    if (selectedType && selectedType !== 'all') {
+      const isExist = options.some((o) => o.value === selectedType);
+      if (!isExist) {
+        const lbl = selectedType.startsWith('raw:')
+          ? selectedType.replace('raw:', '')
+          : selectedType;
+        options.push({ label: lbl, value: selectedType });
+      }
+    }
+
+    return options;
+  }, [searchResults, cachedCustomTypes, selectedType]);
+
+  // 动态计算在当前搜索结果中出现的地区列表
+  const availableAreas = useMemo(() => {
+    if (!searchResults.length) {
+      return [
+        { label: '全部地區', value: 'all' },
+        { label: '中國大陸', value: 'cn' },
+        { label: '中國香港', value: 'hk' },
+        { label: '中國台灣', value: 'tw' },
+        { label: '美國', value: 'us' },
+        { label: '日本', value: 'jp' },
+        { label: '韓國', value: 'kr' },
+      ];
+    }
+
+    const matchedAreas = new Set<string>();
+    searchResults.forEach((item) => {
+      const itemArea = item.area || '';
+      const itemType = item.type_name || item.type || '';
+      Object.entries(AREA_SEARCH_MAP).forEach(([key, words]) => {
+        if (words.some((w) => itemArea.includes(w) || itemType.includes(w))) {
+          matchedAreas.add(key);
+        }
+      });
+    });
+
+    const standardOrder = [
+      { label: '中國大陸', value: 'cn' },
+      { label: '中國香港', value: 'hk' },
+      { label: '中國台灣', value: 'tw' },
+      { label: '美國', value: 'us' },
+      { label: '日本', value: 'jp' },
+      { label: '韓國', value: 'kr' },
+      { label: '英國', value: 'uk' },
+      { label: '泰國', value: 'th' },
+    ];
+
+    const options = [{ label: '全部地區', value: 'all' }];
+    standardOrder.forEach((item) => {
+      if (matchedAreas.has(item.value)) {
+        options.push(item);
+      }
+    });
+
+    // 检查是否有其他地区
+    const allMainWords = Object.values(AREA_SEARCH_MAP).flat();
+    const hasOther = searchResults.some((item) => {
+      const a = item.area || '';
+      return a && !allMainWords.some((w) => a.includes(w));
+    });
+    if (hasOther) {
+      options.push({ label: '其他', value: 'other' });
+    }
+
+    return options;
+  }, [searchResults]);
+
+  // 多条件过滤后的搜索结果
   const filteredSearchResults = useMemo(() => {
-    if (selectedYear === 'all') return searchResults;
     return searchResults.filter((item) => {
-      const yr = parseInt(item.year, 10);
-      if (selectedYear === '2025') return item.year === '2025';
-      if (selectedYear === '2024') return item.year === '2024';
-      if (selectedYear === '2023') return item.year === '2023';
-      if (selectedYear === '2020-2022')
-        return !isNaN(yr) && yr >= 2020 && yr <= 2022;
-      if (selectedYear === 'earlier') return !isNaN(yr) && yr < 2020;
+      // 1. 年份筛选
+      if (selectedYear !== 'all') {
+        const yr = parseInt(item.year, 10);
+        if (selectedYear === '2026_plus' && (isNaN(yr) || yr < 2026))
+          return false;
+        if (selectedYear === '2025' && item.year !== '2025') return false;
+        if (selectedYear === '2024' && item.year !== '2024') return false;
+        if (selectedYear === '2023' && item.year !== '2023') return false;
+        if (
+          selectedYear === '2020-2022' &&
+          (isNaN(yr) || yr < 2020 || yr > 2022)
+        )
+          return false;
+        if (selectedYear === 'earlier' && (isNaN(yr) || yr >= 2020))
+          return false;
+      }
+
+      // 2. 地区筛选
+      if (selectedArea !== 'all') {
+        const itemArea = item.area || '';
+        const itemType = item.type_name || item.type || '';
+        if (selectedArea === 'other') {
+          const mainAreaWords = Object.values(AREA_SEARCH_MAP).flat();
+          const matchesMain = mainAreaWords.some(
+            (w) => itemArea.includes(w) || itemType.includes(w)
+          );
+          if (matchesMain) return false;
+        } else {
+          const targets = AREA_SEARCH_MAP[selectedArea] || [];
+          const matches = targets.some(
+            (w) => itemArea.includes(w) || itemType.includes(w)
+          );
+          if (!matches) return false;
+        }
+      }
+
+      // 3. 类别/题材筛选
+      if (selectedType !== 'all') {
+        const itemType = (item.type_name || item.type || '').trim();
+        const epLen = item.episodes?.length || 0;
+
+        // 如果用户选择了具体的动态细分标签（例如 raw:现代都市、raw:AI漫剧、raw:爽文短剧）
+        if (selectedType.startsWith('raw:')) {
+          const targetTag = selectedType.replace('raw:', '');
+          if (
+            !itemType.includes(targetTag) &&
+            !item.title.includes(targetTag)
+          ) {
+            return false;
+          }
+          return true;
+        }
+
+        const isDuanju =
+          DUANJU_KEYWORDS.some((w) => itemType.includes(w)) ||
+          item.title.includes('短剧') ||
+          item.title.includes('爽文') ||
+          epLen > 30; // 短剧通常是几十集甚至近百集
+
+        if (selectedType === 'duanju') {
+          if (!isDuanju) return false;
+        } else if (selectedType === 'anime') {
+          const isAnime =
+            TYPE_SEARCH_MAP.anime.some((w) => itemType.includes(w)) ||
+            itemType.includes('漫');
+          if (!isAnime || isDuanju) return false;
+        } else if (selectedType === 'show') {
+          const isShow = TYPE_SEARCH_MAP.show.some((w) => itemType.includes(w));
+          if (!isShow) return false;
+        } else if (selectedType === 'movie') {
+          // 是电影：不能是短剧、综艺、动漫，且 (包含电影/动作片等词 或 单集且不是剧)
+          if (isDuanju) return false;
+          const isAnime = TYPE_SEARCH_MAP.anime.some((w) =>
+            itemType.includes(w)
+          );
+          const isShow = TYPE_SEARCH_MAP.show.some((w) => itemType.includes(w));
+          if (isAnime || isShow) return false;
+
+          const hasMovieWord = TYPE_SEARCH_MAP.movie.some((w) =>
+            itemType.includes(w)
+          );
+          const isSingleEp =
+            epLen === 1 && !itemType.includes('剧') && !itemType.includes('劇');
+          if (!hasMovieWord && !isSingleEp) return false;
+        } else if (selectedType === 'tv') {
+          // 是电视剧：不能是短剧、综艺、动漫，且 (包含电视剧关键词 或 多集剧集)
+          if (isDuanju) return false;
+          const isAnime = TYPE_SEARCH_MAP.anime.some((w) =>
+            itemType.includes(w)
+          );
+          const isShow = TYPE_SEARCH_MAP.show.some((w) => itemType.includes(w));
+          if (isAnime || isShow) return false;
+
+          const hasTvWord = TYPE_SEARCH_MAP.tv.some((w) =>
+            itemType.includes(w)
+          );
+          const isMultiEp = epLen > 1;
+          if (!hasTvWord && !isMultiEp) return false;
+        }
+      }
+
       return true;
     });
-  }, [searchResults, selectedYear]);
+  }, [searchResults, selectedYear, selectedArea, selectedType]);
 
   // 聚合后的结果（按标题和年份分组）
   const aggregatedResults = useMemo(() => {
@@ -107,7 +505,7 @@ function SearchPageClient() {
         }
       }
     });
-  }, [searchResults]);
+  }, [filteredSearchResults, searchQuery]);
 
   useEffect(() => {
     // 无搜索参数时聚焦搜索框
@@ -179,6 +577,15 @@ function SearchPageClient() {
   const fetchSearchResults = async (query: string) => {
     try {
       setIsLoading(true);
+      // 从 browser cache 中恢复用户之前设定的 default 筛选偏好
+      if (typeof window !== 'undefined') {
+        const savedYear = localStorage.getItem('search_cached_year');
+        if (savedYear) setSelectedYear(savedYear);
+        const savedArea = localStorage.getItem('search_cached_area');
+        if (savedArea) setSelectedArea(savedArea);
+        const savedType = localStorage.getItem('search_cached_type');
+        if (savedType) setSelectedType(savedType);
+      }
       const response = await fetch(
         `/api/search?q=${encodeURIComponent(query.trim())}`
       );
@@ -299,12 +706,37 @@ function SearchPageClient() {
                 <h2 className='text-base sm:text-xl font-bold text-gray-800 dark:text-gray-200'>
                   搜尋結果
                 </h2>
-                {/* 年份筛选与聚合开关 */}
-                <div className='flex items-center gap-3 flex-wrap'>
-                  {/* 年份筛选药丸 */}
-                  <div className='flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-hide'>
+                {/* 聚合开关 */}
+                <label className='flex items-center gap-2 cursor-pointer select-none shrink-0'>
+                  <span className='text-sm text-gray-700 dark:text-gray-300'>
+                    聚合
+                  </span>
+                  <div className='relative'>
+                    <input
+                      type='checkbox'
+                      className='sr-only peer'
+                      checked={viewMode === 'agg'}
+                      onChange={() =>
+                        setViewMode(viewMode === 'agg' ? 'all' : 'agg')
+                      }
+                    />
+                    <div className='w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
+                    <div className='absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4'></div>
+                  </div>
+                </label>
+              </div>
+
+              {/* 筛选选项组（年份、地區、類型） */}
+              <div className='mb-4 space-y-2.5 bg-gray-50/50 dark:bg-gray-800/40 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800'>
+                {/* 1. 年份筛选 */}
+                <div className='flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5'>
+                  <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0 w-9'>
+                    年份:
+                  </span>
+                  <div className='flex items-center gap-1.5 shrink-0'>
                     {[
                       { label: '全部年份', value: 'all' },
+                      { label: '2026及之後', value: '2026_plus' },
                       { label: '2025', value: '2025' },
                       { label: '2024', value: '2024' },
                       { label: '2023', value: '2023' },
@@ -314,40 +746,72 @@ function SearchPageClient() {
                       <button
                         key={btn.value}
                         type='button'
-                        onClick={() => setSelectedYear(btn.value)}
-                        className={`text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium ${
+                        onClick={() => handleSelectYear(btn.value)}
+                        className={`text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium shrink-0 ${
                           selectedYear === btn.value
-                            ? 'bg-green-500 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                            ? 'bg-green-600 text-white shadow-sm'
+                            : 'bg-gray-200/70 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
                         }`}
                       >
                         {btn.label}
                       </button>
                     ))}
                   </div>
-
-                  {/* 聚合开关 */}
-                  <label className='flex items-center gap-2 cursor-pointer select-none shrink-0'>
-                    <span className='text-sm text-gray-700 dark:text-gray-300'>
-                      聚合
-                    </span>
-                    <div className='relative'>
-                      <input
-                        type='checkbox'
-                        className='sr-only peer'
-                        checked={viewMode === 'agg'}
-                        onChange={() =>
-                          setViewMode(viewMode === 'agg' ? 'all' : 'agg')
-                        }
-                      />
-                      <div className='w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-colors dark:bg-gray-600'></div>
-                      <div className='absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4'></div>
-                    </div>
-                  </label>
                 </div>
+
+                {/* 2. 地區筛选 */}
+                {availableAreas.length > 1 && (
+                  <div className='flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5'>
+                    <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0 w-9'>
+                      地區:
+                    </span>
+                    <div className='flex items-center gap-1.5 shrink-0'>
+                      {availableAreas.map((btn) => (
+                        <button
+                          key={btn.value}
+                          type='button'
+                          onClick={() => handleSelectArea(btn.value)}
+                          className={`text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium shrink-0 ${
+                            selectedArea === btn.value
+                              ? 'bg-purple-600 text-white shadow-sm'
+                              : 'bg-gray-200/70 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. 類型筛选 */}
+                {availableTypes.length > 1 && (
+                  <div className='flex items-center gap-2 overflow-x-auto scrollbar-hide py-0.5'>
+                    <span className='text-[11px] text-gray-400 dark:text-gray-500 font-semibold shrink-0 w-9'>
+                      類型:
+                    </span>
+                    <div className='flex items-center gap-1.5 shrink-0'>
+                      {availableTypes.map((btn) => (
+                        <button
+                          key={btn.value}
+                          type='button'
+                          onClick={() => handleSelectType(btn.value)}
+                          className={`text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium shrink-0 ${
+                            selectedType === btn.value
+                              ? 'bg-blue-600 text-white shadow-sm'
+                              : 'bg-gray-200/70 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                          }`}
+                        >
+                          {btn.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
+
               <div
-                key={`search-results-${viewMode}-${selectedYear}`}
+                key={`search-results-${viewMode}-${selectedYear}-${selectedArea}-${selectedType}`}
                 className={`justify-start ${gridClass}`}
               >
                 {viewMode === 'agg'
@@ -373,7 +837,7 @@ function SearchPageClient() {
                       >
                         <VideoCard
                           id={item.id}
-                          title={item.title + ' ' + item.type_name}
+                          title={item.title}
                           poster={item.poster}
                           episodes={item.episodes.length}
                           source={item.source}
@@ -385,8 +849,13 @@ function SearchPageClient() {
                               : ''
                           }
                           year={item.year}
+                          area={item.area}
                           from='search'
-                          type={item.episodes.length > 1 ? 'tv' : 'movie'}
+                          type={
+                            item.type_name ||
+                            item.type ||
+                            (item.episodes.length > 1 ? '劇集' : '電影')
+                          }
                         />
                       </div>
                     ))}

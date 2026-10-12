@@ -105,13 +105,29 @@ export async function fetchDoubanCategories(
     const doubanData: DoubanCategoryApiResponse = await response.json();
 
     // 转换数据格式
-    const list: DoubanItem[] = doubanData.items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      poster: item.pic?.normal || item.pic?.large || '',
-      rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
-      year: item.card_subtitle?.match(/(\d{4})/)?.[1] || '',
-    }));
+    const list: DoubanItem[] = doubanData.items.map((item) => {
+      const subParts = item.card_subtitle
+        ? item.card_subtitle.split('/').map((s) => s.trim())
+        : [];
+      const year = subParts[0]?.match(/\d{4}/)?.[0] || '';
+      let area = subParts[1] || '';
+      if (area) {
+        const areaList = area.split(/\s+/).filter(Boolean);
+        area = areaList.slice(0, 2).join(' / ');
+      }
+      const typePart = subParts[2] || '';
+      const type = typePart.split(/\s+/).filter(Boolean)[0] || '';
+
+      return {
+        id: item.id,
+        title: item.title,
+        poster: item.pic?.normal || item.pic?.large || '',
+        rate: item.rating?.value ? item.rating.value.toFixed(1) : '',
+        year,
+        area,
+        type,
+      };
+    });
 
     return {
       code: 200,

@@ -94,6 +94,8 @@ export interface SearchResult {
   desc?: string;
   type_name?: string;
   douban_id?: number;
+  area?: string;
+  type?: string;
 }
 
 // 豆瓣数据结构
@@ -103,6 +105,8 @@ export interface DoubanItem {
   poster: string;
   rate: string;
   year: string;
+  area?: string;
+  type?: string;
 }
 
 export interface DoubanResult {

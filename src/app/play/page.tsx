@@ -657,19 +657,74 @@ function PlayPageClient() {
         }
         const data = await response.json();
 
-        // 处理搜索结果，根据规则过滤
-        const results = data.results.filter(
-          (result: SearchResult) =>
-            result.title.replaceAll(' ', '').toLowerCase() ===
-              videoTitleRef.current.replaceAll(' ', '').toLowerCase() &&
-            (videoYearRef.current
-              ? result.year.toLowerCase() === videoYearRef.current.toLowerCase()
-              : true) &&
-            (searchType
-              ? (searchType === 'tv' && result.episodes.length > 1) ||
-                (searchType === 'movie' && result.episodes.length === 1)
-              : true)
+        // 处理搜索结果，按匹配优先级多级兜底（Tiered Fallback）：
+        // 1. 完全匹配：标题一致 + 年份一致 + 类型匹配
+        // 2. 年份宽松：标题一致 + 类型匹配（忽略年份差异，因为上游爬虫年份可能缺失或与豆瓣上映年份不一致）
+        // 3. 类型宽松：标题一致 + 年份一致
+        // 4. 标题一致：只要标题一致即可
+        // 5. 包含匹配：包含标题
+        const cleanTarget = videoTitleRef.current
+          .replaceAll(' ', '')
+          .toLowerCase();
+        const rawResults: SearchResult[] = data.results || [];
+
+        const isTitleMatch = (res: SearchResult) =>
+          res.title.replaceAll(' ', '').toLowerCase() === cleanTarget;
+
+        const isYearMatch = (res: SearchResult) => {
+          if (!videoYearRef.current || !res.year || res.year === 'unknown')
+            return true;
+          return res.year.toLowerCase() === videoYearRef.current.toLowerCase();
+        };
+
+        const isTypeMatch = (res: SearchResult) => {
+          if (!searchType) return true;
+          if (searchType === 'tv') {
+            return (
+              (res.episodes && res.episodes.length > 1) ||
+              (res.type_name &&
+                (res.type_name.includes('剧') || res.type_name.includes('劇')))
+            );
+          }
+          if (searchType === 'movie') {
+            // 注意：部分电影上游有多版本/多音轨链接，episodes.length可能 > 1
+            return (
+              (res.episodes && res.episodes.length === 1) ||
+              (res.type_name &&
+                (res.type_name.includes('电影') ||
+                  res.type_name.includes('電影'))) ||
+              !res.type_name
+            );
+          }
+          return true;
+        };
+
+        let results = rawResults.filter(
+          (r) => isTitleMatch(r) && isYearMatch(r) && isTypeMatch(r)
         );
+
+        if (results.length === 0) {
+          // 兜底 1: 忽略年份（只看标题和类型）
+          results = rawResults.filter((r) => isTitleMatch(r) && isTypeMatch(r));
+        }
+
+        if (results.length === 0) {
+          // 兜底 2: 忽略类型，看年份
+          results = rawResults.filter((r) => isTitleMatch(r) && isYearMatch(r));
+        }
+
+        if (results.length === 0) {
+          // 兜底 3: 只要标题完全一致
+          results = rawResults.filter((r) => isTitleMatch(r));
+        }
+
+        if (results.length === 0 && cleanTarget.length > 1) {
+          // 兜底 4: 包含标题
+          results = rawResults.filter((r) =>
+            r.title.replaceAll(' ', '').toLowerCase().includes(cleanTarget)
+          );
+        }
+
         setAvailableSources(results);
         return results;
       } catch (err) {
@@ -1841,10 +1896,10 @@ function PlayPageClient() {
 
   return (
     <PageLayout activePath='/play'>
-      <div className='flex flex-col gap-3 pb-4 px-5 lg:px-[3rem] 2xl:px-20'>
+      <div className='flex flex-col gap-3 pb-4 px-2 sm:px-6'>
         {/* 第一行：影片标题与选集控制（貼頂吸頂 sticky top-0，毛玻璃背景） */}
-        <div className='sticky top-0 z-30 -mx-5 lg:-mx-[3rem] 2xl:-mx-20 px-5 lg:px-[3rem] 2xl:px-20 py-2.5 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-gray-200/40 dark:border-gray-800/40 transition-colors'>
-          <div className='pl-11 md:pl-12 pr-44 sm:pr-48 flex items-center justify-between flex-wrap gap-2.5'>
+        <div className='sticky top-0 z-30 -mx-2 sm:-mx-6 px-2 sm:px-6 py-2.5 bg-gray-50/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-gray-200/40 dark:border-gray-800/40 transition-colors'>
+          <div className='pl-10 sm:pl-12 pr-44 sm:pr-48 flex items-center justify-between flex-wrap gap-2.5'>
             <div className='flex items-center gap-3 flex-wrap'>
               <h1 className='text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 flex-wrap'>
                 <span>{videoTitle || '影片標題'}</span>
@@ -1989,12 +2044,12 @@ function PlayPageClient() {
           className={`flex ${
             mode === 'tv'
               ? 'gap-3 max-w-3xl items-start'
-              : 'grid grid-cols-1 md:grid-cols-4 gap-4'
+              : 'items-start gap-6 py-2'
           }`}
         >
           {/* 封面展示（在電視模式下與普通卡片完全同比例，縮小至 w-[90px]） */}
           <div className='hidden md:block flex-shrink-0'>
-            <div className={mode === 'tv' ? 'w-[90px]' : 'w-44 pr-6 py-4'}>
+            <div className={mode === 'tv' ? 'w-[90px]' : 'w-44'}>
               <div className='bg-gray-300 dark:bg-gray-700 aspect-[2/3] w-full flex items-center justify-center rounded-lg overflow-hidden shadow-sm'>
                 {videoCover ? (
                   <img
@@ -2015,7 +2070,7 @@ function PlayPageClient() {
           <div className='flex-1 min-w-0'>
             <div
               className={`flex flex-col min-h-0 ${
-                mode === 'tv' ? 'p-0.5' : 'p-6'
+                mode === 'tv' ? 'p-0.5' : 'py-1'
               }`}
             >
               {/* 标题 */}
