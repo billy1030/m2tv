@@ -53,3 +53,6 @@ android-tv/.gradle/
 android-tv/build/
 android-tv/app/build/
 
+# internal docs
+tech-docs/
+
