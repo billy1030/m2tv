@@ -31,6 +31,8 @@ jobs:
 
       - name: Build with next-on-pages
         run: pnpm pages:build
+        env:
+          PASSWORD: ${{ secrets.PASSWORD }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
