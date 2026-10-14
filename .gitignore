@@ -47,12 +47,22 @@ public/manifest.json
 public/sw.js
 public/workbox-*.js
 
-# Android build outputs & APKs
+# Android TV wrapper (local only)
+android-tv/
 *.apk
-android-tv/.gradle/
-android-tv/build/
-android-tv/app/build/
 
-# internal docs
+# IDE & Editor configs
+.vscode/
+
+# internal docs & sql
 tech-docs/
+"D1初始化.md"
+D1初始化.md
+
+# unused deployment & container files
+vercel.json
+Dockerfile
+.dockerignore
+start.js
+proxy.worker.js
 
