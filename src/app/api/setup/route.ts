@@ -32,19 +32,20 @@ export async function GET(_request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('x-setup-key') || '';
-    const envPassword = process.env.PASSWORD || '$$$$$$$$';
+    const envPassword = process.env.PASSWORD;
 
-    // Require either matching password or matching owner key
-    if (envPassword) {
-      if (!authHeader || authHeader.trim() !== envPassword.trim()) {
-        console.log(
-          `[setup auth] mismatch: header len=${authHeader.length}, env len=${envPassword.length}`
-        );
-        return NextResponse.json(
-          { error: '访问口令无效或未提供，请输入正确的站点访问密码' },
-          { status: 401 }
-        );
-      }
+    if (!envPassword) {
+      return NextResponse.json(
+        { error: '站点未配置 PASSWORD 环境变量，无法使用 setup 功能' },
+        { status: 500 }
+      );
+    }
+
+    if (!authHeader || authHeader.trim() !== envPassword.trim()) {
+      return NextResponse.json(
+        { error: '访问口令无效或未提供，请输入正确的站点访问密码' },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();

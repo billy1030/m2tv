@@ -18,8 +18,11 @@ export async function POST(request: NextRequest) {
 
   // 验证管理员身份
   if (storageType === 'localstorage') {
-    const effectivePassword = process.env.PASSWORD || '$$$$$$$$';
-    if (!authInfo.password || authInfo.password !== effectivePassword) {
+    if (
+      !process.env.PASSWORD ||
+      !authInfo.password ||
+      authInfo.password !== process.env.PASSWORD
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   } else {

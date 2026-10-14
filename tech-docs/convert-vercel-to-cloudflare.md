@@ -1,4 +1,4 @@
-﻿# 將 Next.js 專案從 Vercel 遷移至 Cloudflare Pages 指南
+# 將 Next.js 專案從 Vercel 遷移至 Cloudflare Pages 指南
 
 本文件詳細記載如何將原本為 Vercel 設計的 Next.js 14 (App Router) 專案（如 MoonTV）完整轉換並部署至 Cloudflare Pages 的標準工程指引。
 
@@ -129,7 +129,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 827b99611b62c4ac9c6cfe95118973c3
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .vercel/output/static --project-name=moontv --commit-dirty=true
 ```
 

@@ -18,8 +18,11 @@ export async function GET(request: NextRequest) {
 
   // localstorage 模式下只要密码正确即可
   if (storageType === 'localstorage') {
-    const effectivePassword = process.env.PASSWORD || '$$$$$$$$';
-    if (!authInfo.password || authInfo.password !== effectivePassword) {
+    if (
+      !process.env.PASSWORD ||
+      !authInfo.password ||
+      authInfo.password !== process.env.PASSWORD
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   } else {
@@ -73,8 +76,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (storageType === 'localstorage') {
-    const effectivePassword = process.env.PASSWORD || '$$$$$$$$';
-    if (!authInfo.password || authInfo.password !== effectivePassword) {
+    if (
+      !process.env.PASSWORD ||
+      !authInfo.password ||
+      authInfo.password !== process.env.PASSWORD
+    ) {
       return NextResponse.json({ error: '密码错误或未授权' }, { status: 401 });
     }
   } else {

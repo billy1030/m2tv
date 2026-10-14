@@ -6,16 +6,16 @@
 
 ## 1. 核心專案與環境資訊 (Key Information)
 
-| 項目                  | 數值 / 內容                                  | 說明                          |
-| :-------------------- | :------------------------------------------- | :---------------------------- |
-| Worker 名稱           | workertest                                   | 定義於 wrangler.jsonc         |
-| Cloudflare Account ID | 827b99611b62c4ac9c6cfe95118973c3             | 帳號專屬識別碼                |
-| 帳號名稱 / Email      | billy.lam@gmail.com                          | 管理者帳號                    |
-| Workers.dev 子網域    | billy-lam-827                                | 帳號專屬 workers.dev 前綴     |
-| 正式線上 URL          | https://workertest.billy-lam-827.workers.dev | 全球邊緣已發布端點            |
-| 本機開發 Port         | 2020 (http://localhost:2020)                 | 透過 wrangler dev --port 2020 |
-| GitHub 倉庫           | https://github.com/billy1030/workertest      | 主分支 main                   |
-| GitHub Secret 名稱    | CLOUDFLARE_API_TOKEN                         | 用於 Actions 自動部署         |
+| 項目                  | 數值 / 內容                                     | 說明                      |
+| :-------------------- | :---------------------------------------------- | :------------------------ |
+| 專案名稱              | moontv                                          | 定義於 package.json       |
+| Cloudflare Account ID | `${{ secrets.CLOUDFLARE_ACCOUNT_ID }}`          | 請於 GitHub Secrets 配置  |
+| 帳號名稱 / Email      | 請於個人 Cloudflare 帳戶查看                    | 管理者帳號                |
+| Workers.dev 子網域    | 請於個人 Cloudflare Dashboard 查看              | 帳號專屬 workers.dev 前綴 |
+| 正式線上 URL          | `https://<your-project>.pages.dev`              | 全球邊緣已發布端點        |
+| 本機開發 Port         | 3000 (http://localhost:3000)                    | 透過 pnpm dev             |
+| GitHub 倉庫           | `https://github.com/<owner>/<repo>`             | 主分支 main               |
+| GitHub Secret 名稱    | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | 用於 Actions 自動部署     |
 
 ---
 
@@ -124,8 +124,8 @@ npx wrangler tail workertest
 
 ### 4.1 Cloudflare Dashboard
 
-- **Workers 總覽與指標**：
-  👉 [https://dash.cloudflare.com/827b99611b62c4ac9c6cfe95118973c3/workers-and-pages](https://dash.cloudflare.com/827b99611b62c4ac9c6cfe95118973c3/workers-and-pages)
+- **Workers & Pages 總覽與指標**：
+  👉 [https://dash.cloudflare.com/](https://dash.cloudflare.com/) (登入後選擇 Workers & Pages)
 
 - 查看請求數 (Requests)、CPU 耗時、錯誤率 (Error Rate)。
 - **部署歷史與版本回退 (Rollback)**：
@@ -138,18 +138,14 @@ npx wrangler tail workertest
 1. 進入 `workertest` ➔ **Logs** 分頁。
 2. 點擊 **Begin log stream** 即可直接在網頁端串流觀察請求。
 
-### 4.2 GitHub Dashboard
-
 - **設定 CI/CD Secret**：
-  👉 [https://github.com/billy1030/workertest/settings/secrets/actions](https://github.com/billy1030/workertest/settings/secrets/actions)
+  前往您 GitHub 倉庫 ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions**
 
 - 點擊 **New repository secret**
-- Name: `CLOUDFLARE_API_TOKEN`
-- Value: 填入您的 API Token
+- Name: `CLOUDFLARE_API_TOKEN` (填入 API Token)
+- Name: `CLOUDFLARE_ACCOUNT_ID` (填入 Account ID)
 - **手動觸發部署 (Workflow Dispatch)**：
-  👉 [https://github.com/billy1030/workertest/actions](https://github.com/billy1030/workertest/actions)
-
-- 選擇 **Deploy to Cloudflare Workers** ➔ 點擊 **Run workflow**。
+  前往您 GitHub 倉庫 ➔ **Actions** 分頁 ➔ 選擇 **Deploy MoonTV to Cloudflare Pages** ➔ 點擊 **Run workflow**。
 
 ---
 
@@ -195,18 +191,18 @@ npx wrangler tail workertest
 
 ## 7. 自訂網域 (Custom Domain) 配置實務與 Error 1001 排查
 
-在將 Cloudflare Workers 或 Pages 綁定到獨立自訂網域（例如以 MoonTV 專案綁定 `tv.vonnandryan.com` 為例）時的關鍵實務：
+在將 Cloudflare Workers 或 Pages 綁定到獨立自訂網域（例如以綁定 `tv.yourdomain.com` 為例）時的關鍵實務：
 
 ### 7.1 常見誤區：Error 1001 (DNS Resolution Error)
 
-- **問題現象**：在 DNS 區域添加了 `CNAME tv.vonnandryan.com -> moontv-1mv.pages.dev`，訪問時卻收到 `HTTP 409 Conflict (error code: 1001)` 與 SSL 握手失敗。
+- **問題現象**：在 DNS 區域添加了 `CNAME tv.yourdomain.com -> <your-project>.pages.dev`，訪問時卻收到 `HTTP 409 Conflict (error code: 1001)` 與 SSL 握手失敗。
 - **根本原因**：Cloudflare 邊緣伺服器需要安全校驗該主機名稱是否已與特定 Pages/Worker 專案綁定，否則不會放行該請求，也不會為其頒發邊緣 SSL 憑證。
 
 ### 7.2 標準配置 SOP
 
 1. **進入專案設定**：前往 Cloudflare Dashboard ➔ 進入目標 Pages/Worker 專案。
 2. **登記網域**：切換至 **Custom domains** 分頁 ➔ 點擊 **Set up a custom domain**。
-3. **輸入網域名稱**：輸入主機名（如 `tv.vonnandryan.com`）並點擊 **Continue**。
+3. **輸入網域名稱**：輸入主機名（如 `tv.yourdomain.com`）並點擊 **Continue**。
 4. **自動更新與啟用**：點擊 **Activate domain**，系統將自動配置路由並在 1 分鐘內完成 SSL 憑證簽發（狀態轉為綠燈 Active）。
 5. **免重複部署**：此操作純屬路由綁定，**不需要**重新執行 `Create deployment`。
 
@@ -236,18 +232,17 @@ npx wrangler tail workertest
 
 ### 8.3 如何前往設定 GitHub Secrets (Where & How to Add)
 
-#### 直達設定網址：
-
-- **workertest 倉庫**：[https://github.com/billy1030/workertest/settings/secrets/actions](https://github.com/billy1030/workertest/settings/secrets/actions)
-- **MoonTV 倉庫**：[https://github.com/billy1030/m2tv/settings/secrets/actions](https://github.com/billy1030/m2tv/settings/secrets/actions)
-
 #### 手動點擊路徑：
 
 1. 進入 GitHub 倉庫首頁。
 2. 點擊頂部選單最右邊的 ⚙️ **「Settings」**。
 3. 在左側選單往下找到 **Security** 區塊 ➔ 點擊 **「Secrets and variables」** ➔ 點擊 **「Actions」**。
 4. 點擊綠色按鈕 **「New repository secret」**。
-5. 填寫：
-   - **Name**: `CLOUDFLARE_API_TOKEN`
-   - **Secret**: 貼上您的 Cloudflare API Token
+5. 新增以下兩個 Secrets：
+   - **Secret 1**:
+     - **Name**: `CLOUDFLARE_API_TOKEN`
+     - **Secret**: 貼上您的 Cloudflare API Token
+   - **Secret 2**:
+     - **Name**: `CLOUDFLARE_ACCOUNT_ID`
+     - **Secret**: 貼上您的 Cloudflare Account ID
 6. 點擊 **Add secret** 儲存。

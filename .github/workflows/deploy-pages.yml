@@ -1,4 +1,4 @@
-﻿name: Deploy MoonTV to Cloudflare Pages
+name: Deploy MoonTV to Cloudflare Pages
 
 on:
   push:
@@ -36,5 +36,5 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 827b99611b62c4ac9c6cfe95118973c3
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy .vercel/output/static --project-name=moontv --commit-dirty=true

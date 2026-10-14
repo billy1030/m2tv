@@ -11,7 +11,7 @@
 - **手動點擊路徑**：
   登入 Cloudflare Dashboard ➔ 點擊右上角個人頭像圖示 ➔ **My Profile** ➔ 左側選單 **API Tokens**。
 - **GitHub Repository Secrets 設定頁**：
-  👉 [https://github.com/billy1030/workertest/settings/secrets/actions](https://github.com/billy1030/workertest/settings/secrets/actions)
+  前往您 GitHub 倉庫 ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions**
 
 ---
 
@@ -97,10 +97,12 @@ npx wrangler whoami
    npm run deploy
    ```
 2. **GitHub Actions 自動部署**：
-   - 前往 [GitHub Secrets 設定頁](https://github.com/billy1030/workertest/settings/secrets/actions)
+   - 前往 GitHub 倉庫 ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions**
    - 點擊 **New repository secret**
    - **Name**: `CLOUDFLARE_API_TOKEN`
    - **Secret**: 貼上 Token 儲存
+   - **Name**: `CLOUDFLARE_ACCOUNT_ID`
+   - **Secret**: 貼上 Cloudflare Account ID 儲存
 3. **本機開發隔離存檔**：
    - 存入專案根目錄的 [.token](../.token)
    - 此檔已被 [.gitignore](../.gitignore) 忽略，不會被上傳至 Git 倉庫。

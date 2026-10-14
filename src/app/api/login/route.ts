@@ -71,7 +71,16 @@ export async function POST(req: NextRequest) {
   try {
     // 本地 / localStorage 模式——仅校验固定密码
     if (STORAGE_TYPE === 'localstorage') {
-      const envPassword = process.env.PASSWORD || '$$$$$$$$';
+      const envPassword = process.env.PASSWORD;
+      if (!envPassword) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: '站点未配置访问密码，请在环境变量中设置 PASSWORD',
+          },
+          { status: 500 }
+        );
+      }
 
       const { password } = await req.json();
       if (typeof password !== 'string') {
@@ -117,13 +126,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '密码不能为空' }, { status: 400 });
     }
 
-    const effectiveAdminPassword = process.env.PASSWORD || '$$$$$$$$';
-    const effectiveAdminUsername = process.env.USERNAME || 'admin';
-
     // 可能是站长，直接读环境变量
     if (
-      username === effectiveAdminUsername &&
-      password === effectiveAdminPassword
+      process.env.USERNAME &&
+      process.env.PASSWORD &&
+      username === process.env.USERNAME &&
+      password === process.env.PASSWORD
     ) {
       // 验证成功，设置认证cookie
       const response = NextResponse.json({ ok: true });

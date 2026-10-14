@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">MoonTV</string>
-    <string name="default_url">https://tv.vonnandryan.com</string>
+    <string name="default_url">https://your-moontv-deployment.pages.dev</string>
 </resources>
