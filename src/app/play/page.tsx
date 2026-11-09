@@ -4,7 +4,7 @@
 
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
-import { Heart } from 'lucide-react';
+import { Check, Copy, Heart } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
@@ -160,12 +160,36 @@ function PlayPageClient() {
     }
   };
 
+  const [copiedCurrentEpisode, setCopiedCurrentEpisode] = useState(false);
+  const [copiedAllEpisodes, setCopiedAllEpisodes] = useState(false);
+
   const handleCopyM3u8 = async () => {
-    if (!videoUrl) return;
-    const ok = await copyToClipboard(videoUrl);
+    const currentUrl =
+      artPlayerRef.current?.url || artPlayerRef.current?.switch || videoUrl;
+    if (!currentUrl) return;
+    const ok = await copyToClipboard(currentUrl);
     if (ok) {
+      setCopiedCurrentEpisode(true);
+      setTimeout(() => setCopiedCurrentEpisode(false), 2000);
       if (artPlayerRef.current?.notice) {
         artPlayerRef.current.notice.show = '已複製實際視頻鏈接 (M3U8)！';
+      }
+    }
+  };
+
+  const handleCopyAllEpisodes = async () => {
+    const epList = detail?.episodes;
+    if (!epList || epList.length === 0) return;
+    const title = searchTitle || videoTitle || '影片';
+    const text = epList
+      .map((u, i) => `${title} - 第${i + 1}集: ${u}`)
+      .join('\n');
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopiedAllEpisodes(true);
+      setTimeout(() => setCopiedAllEpisodes(false), 2200);
+      if (artPlayerRef.current?.notice) {
+        artPlayerRef.current.notice.show = `已複製全劇共 ${epList.length} 集鏈接！`;
       }
     }
   };
@@ -1518,6 +1542,15 @@ function PlayPageClient() {
               handleNextEpisode();
             },
           },
+          {
+            position: 'right',
+            index: 10,
+            html: '<i class="art-icon flex" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></i>',
+            tooltip: '複製視頻鏈接 (M3U8)',
+            click: function () {
+              handleCopyM3u8();
+            },
+          },
         ],
       });
 
@@ -1949,6 +1982,64 @@ function PlayPageClient() {
                   }`}
                 />
               </button>
+
+              {/* 複製目前集數真實播放鏈接 (方便 Mac 用戶左鍵一按即抄) */}
+              {videoUrl && (
+                <button
+                  type='button'
+                  onClick={handleCopyM3u8}
+                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition-all duration-200 cursor-pointer ${
+                    copiedCurrentEpisode
+                      ? 'bg-emerald-600 text-white shadow-emerald-500/25 scale-105'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 hover:scale-105 active:scale-95'
+                  }`}
+                  title='點擊直接複製目前播放集數之真實視頻鏈接 (M3U8)'
+                >
+                  {copiedCurrentEpisode ? (
+                    <>
+                      <Check className='w-3.5 h-3.5 stroke-[3]' />
+                      <span>已複製第 {currentEpisodeIndex + 1} 集！</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className='w-3.5 h-3.5' />
+                      <span>
+                        {totalEpisodes > 1
+                          ? `複製第 ${currentEpisodeIndex + 1} 集`
+                          : '複製播放鏈接'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* 複製全劇所有集數鏈接 (當總集數 > 1 時顯示) */}
+              {totalEpisodes > 1 &&
+                detail?.episodes &&
+                detail.episodes.length > 0 && (
+                  <button
+                    type='button'
+                    onClick={handleCopyAllEpisodes}
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border shadow-sm transition-all duration-200 cursor-pointer ${
+                      copiedAllEpisodes
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-white/80 hover:bg-white text-gray-700 hover:text-amber-600 dark:bg-gray-800/80 dark:hover:bg-gray-800 dark:text-gray-300 border-gray-200/70 dark:border-gray-700/70'
+                    }`}
+                    title={`一鍵複製全劇共 ${detail.episodes.length} 集真實播放鏈接`}
+                  >
+                    {copiedAllEpisodes ? (
+                      <>
+                        <Check className='w-3 h-3 stroke-[2.5] text-emerald-600' />
+                        <span>全劇已複製！</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className='w-3 h-3 text-gray-500 dark:text-gray-400' />
+                        <span>複製全劇 ({detail.episodes.length}集)</span>
+                      </>
+                    )}
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -2024,6 +2115,7 @@ function PlayPageClient() {
             >
               <EpisodeSelector
                 totalEpisodes={totalEpisodes}
+                episodes={detail?.episodes || []}
                 value={currentEpisodeIndex + 1}
                 onChange={handleEpisodeChange}
                 onSourceChange={handleSourceChange}

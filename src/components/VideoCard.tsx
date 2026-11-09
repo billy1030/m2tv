@@ -22,7 +22,7 @@ import {
   subscribeToDataUpdates,
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
-import { processImageUrl } from '@/lib/utils';
+import { copyTextToClipboard, processImageUrl } from '@/lib/utils';
 
 import { useDisplayMode } from '@/components/DisplayModeContext';
 import { ImagePlaceholder } from '@/components/ImagePlaceholder';
@@ -318,21 +318,10 @@ export default function VideoCard({
 
       if (!textToCopy) return;
 
-      try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(textToCopy);
-        } else {
-          const textArea = document.createElement('textarea');
-          textArea.value = textToCopy;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-        }
+      const ok = await copyTextToClipboard(textToCopy);
+      if (ok) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // ignore
       }
     },
     [
@@ -482,10 +471,32 @@ export default function VideoCard({
         )}
 
         {actualEpisodes && actualEpisodes > 1 && (
-          <div className='absolute top-2 right-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md transition-all duration-300 ease-out group-hover:scale-110'>
+          <div
+            onClick={(e) => {
+              if (mode === 'desktop' && copyLinkMode && playRelativeUrl) {
+                e.stopPropagation();
+                router.push(playRelativeUrl);
+              }
+            }}
+            title={
+              mode === 'desktop' && copyLinkMode
+                ? '點擊前往播放頁選集／複製第 2 集及後續集數'
+                : undefined
+            }
+            className={`absolute top-2 right-2 z-20 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-md shadow-md transition-all duration-300 ease-out group-hover:scale-110 ${
+              mode === 'desktop' && copyLinkMode
+                ? 'cursor-pointer hover:bg-green-600 ring-2 ring-white/60 active:scale-95'
+                : ''
+            }`}
+          >
             {currentEpisode
               ? `${currentEpisode}/${actualEpisodes}`
-              : actualEpisodes}
+              : `${actualEpisodes} 集`}
+            {mode === 'desktop' && copyLinkMode && (
+              <span className='ml-1 text-[10px] font-normal underline opacity-90'>
+                選集 ›
+              </span>
+            )}
           </div>
         )}
 
@@ -495,7 +506,11 @@ export default function VideoCard({
             type='button'
             onClick={handleCopyLink}
             title={
-              copied ? '已複製真實 M3U8 鏈接！' : '點擊複製真實視頻鏈接 (M3U8)'
+              copied
+                ? '已複製真實 M3U8 鏈接！'
+                : actualEpisodes && actualEpisodes > 1
+                ? '點擊複製第 1 集真實視頻鏈接 (M3U8)'
+                : '點擊複製真實視頻鏈接 (M3U8)'
             }
             className={`absolute top-2 left-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold shadow-lg transition-all duration-200 animate-in fade-in zoom-in-95 ${
               copied
@@ -511,7 +526,9 @@ export default function VideoCard({
             ) : (
               <>
                 <Copy size={13} className='stroke-[2.5]' />
-                <span>複製</span>
+                <span>
+                  {actualEpisodes && actualEpisodes > 1 ? '複製第1集' : '複製'}
+                </span>
               </>
             )}
           </button>

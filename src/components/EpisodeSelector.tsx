@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
+import { Check, Copy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, {
   useCallback,
@@ -10,7 +11,13 @@ import React, {
 } from 'react';
 
 import { SearchResult } from '@/lib/types';
-import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import {
+  copyTextToClipboard,
+  getVideoResolutionFromM3u8,
+  processImageUrl,
+} from '@/lib/utils';
+
+import { useDisplayMode } from '@/components/DisplayModeContext';
 
 // 定义视频信息类型
 interface VideoInfo {
@@ -23,6 +30,8 @@ interface VideoInfo {
 interface EpisodeSelectorProps {
   /** 总集数 */
   totalEpisodes: number;
+  /** 所有集数真实播放链接列表 (M3U8) */
+  episodes?: string[];
   /** 每页显示多少集，默认 50 */
   episodesPerPage?: number;
   /** 当前选中的集数（1 开始） */
@@ -47,6 +56,7 @@ interface EpisodeSelectorProps {
  */
 const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   totalEpisodes,
+  episodes = [],
   episodesPerPage = 50,
   value = 1,
   onChange,
@@ -60,7 +70,35 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   precomputedVideoInfo,
 }) => {
   const router = useRouter();
+  const { mode, copyLinkMode } = useDisplayMode();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
+
+  // 复制反馈与状态
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [copiedEpisodeNum, setCopiedEpisodeNum] = useState<number | null>(null);
+  const feedbackTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const showCopyFeedback = useCallback((msg: string, epNum?: number) => {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+    setCopyFeedback(msg);
+    if (epNum !== undefined) {
+      setCopiedEpisodeNum(epNum);
+    }
+    feedbackTimerRef.current = setTimeout(() => {
+      setCopyFeedback(null);
+      setCopiedEpisodeNum(null);
+    }, 2200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   // 存储每个源的视频信息
   const [videoInfoMap, setVideoInfoMap] = useState<Map<string, VideoInfo>>(
@@ -288,6 +326,75 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
     [onChange]
   );
 
+  const handleCopyEpisode = useCallback(
+    async (epNumber: number, e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const episodeIndex = epNumber - 1;
+      const url = episodes?.[episodeIndex];
+      if (!url) {
+        showCopyFeedback(`第 ${epNumber} 集尚未有有效播放鏈接`);
+        return;
+      }
+      const ok = await copyTextToClipboard(url);
+      if (ok) {
+        showCopyFeedback(`已複製第 ${epNumber} 集 M3U8 鏈接！`, epNumber);
+      } else {
+        showCopyFeedback('複製失敗，請手動複製');
+      }
+    },
+    [episodes, showCopyFeedback]
+  );
+
+  const handleCopyAllEpisodes = useCallback(
+    async (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!episodes || episodes.length === 0) {
+        showCopyFeedback('暫無集數鏈接可供複製');
+        return;
+      }
+      const titlePrefix = videoTitle ? `${videoTitle} - ` : '';
+      const text = episodes
+        .map((url, i) => `${titlePrefix}第${i + 1}集: ${url}`)
+        .join('\n');
+      const ok = await copyTextToClipboard(text);
+      if (ok) {
+        showCopyFeedback(`已複製全劇共 ${episodes.length} 集 M3U8 鏈接！`);
+      } else {
+        showCopyFeedback('複製失敗，請重試');
+      }
+    },
+    [episodes, showCopyFeedback, videoTitle]
+  );
+
+  const handleEpisodeBtnClick = useCallback(
+    (episodeNumber: number) => {
+      // 在電腦模式且開啟複製模式時，點擊直接複製該集 M3U8
+      if (mode === 'desktop' && copyLinkMode) {
+        handleCopyEpisode(episodeNumber);
+        return;
+      }
+      handleEpisodeClick(episodeNumber - 1);
+    },
+    [copyLinkMode, handleCopyEpisode, handleEpisodeClick, mode]
+  );
+
+  const handleEpisodeBtnContextMenu = useCallback(
+    (episodeNumber: number, e: React.MouseEvent) => {
+      // 在電腦模式下，右鍵點擊集數按鈕直接複製該集 M3U8
+      if (mode === 'desktop') {
+        e.preventDefault();
+        handleCopyEpisode(episodeNumber, e);
+      }
+    },
+    [handleCopyEpisode, mode]
+  );
+
   const handleSourceClick = useCallback(
     (source: SearchResult) => {
       onSourceChange?.(source.source, source.id, source.title);
@@ -302,7 +409,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
+    <div className='relative md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
       <div className='flex mb-1 -mx-6 flex-shrink-0'>
         {totalEpisodes > 1 && (
@@ -337,7 +444,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
       {activeTab === 'episodes' && (
         <>
           {/* 分类标签 */}
-          <div className='flex items-center gap-4 mb-4 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 flex-shrink-0'>
+          <div className='flex items-center gap-2 mb-3 border-b border-gray-300 dark:border-gray-700 -mx-6 px-6 pb-1 flex-shrink-0'>
             <div className='flex-1 overflow-x-auto' ref={categoryContainerRef}>
               <div className='flex gap-2 min-w-max'>
                 {categories.map((label, idx) => {
@@ -366,13 +473,28 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                 })}
               </div>
             </div>
+
+            {/* 电脑模式下的複製全部按鈕 */}
+            {mode === 'desktop' && episodes && episodes.length > 0 && (
+              <button
+                type='button'
+                onClick={handleCopyAllEpisodes}
+                className='flex-shrink-0 flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 dark:text-amber-400 dark:bg-amber-400/10 dark:hover:bg-amber-400/20 transition-all border border-amber-500/20'
+                title='複製全部集數真實播放鏈接 (M3U8)'
+              >
+                <Copy className='w-3.5 h-3.5' />
+                <span>複製全部</span>
+              </button>
+            )}
+
             {/* 向上/向下按钮 */}
             <button
-              className='flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-gray-700 hover:text-green-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-green-400 dark:hover:bg-white/20 transition-colors transform translate-y-[-4px]'
+              className='flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center text-gray-700 hover:text-green-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-green-400 dark:hover:bg-white/20 transition-colors'
               onClick={() => {
                 // 切换集数排序（正序/倒序）
                 setDescending((prev) => !prev);
               }}
+              title={descending ? '切換為正序' : '切換為倒序'}
             >
               <svg
                 className='w-4 h-4'
@@ -390,35 +512,86 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
             </button>
           </div>
 
+          {/* 複製模式提示條 (電腦模式開啟複製時顯示) */}
+          {mode === 'desktop' && copyLinkMode && (
+            <div className='flex items-center justify-between px-3 py-1.5 mb-2.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-medium animate-in fade-in duration-200'>
+              <div className='flex items-center gap-1.5 truncate'>
+                <Copy className='w-3.5 h-3.5 text-amber-500 animate-pulse flex-shrink-0' />
+                <span className='truncate'>
+                  複製模式中：點擊集數直接複製 M3U8
+                </span>
+              </div>
+              {episodes && episodes.length > 0 && (
+                <button
+                  type='button'
+                  onClick={handleCopyAllEpisodes}
+                  className='text-[11px] font-semibold underline hover:text-amber-800 dark:hover:text-amber-200 ml-2 whitespace-nowrap'
+                >
+                  一鍵複製全部
+                </button>
+              )}
+            </div>
+          )}
+
           {/* 集数网格 */}
           <div className='grid grid-cols-[repeat(auto-fill,minmax(40px,1fr))] auto-rows-[40px] gap-x-3 gap-y-3 overflow-y-auto h-full pb-4'>
             {(() => {
               const len = currentEnd - currentStart + 1;
-              const episodes = Array.from({ length: len }, (_, i) =>
+              return Array.from({ length: len }, (_, i) =>
                 descending ? currentEnd - i : currentStart + i
               );
-              return episodes;
             })().map((episodeNumber) => {
               const isActive = episodeNumber === value;
+              const isCopied = copiedEpisodeNum === episodeNumber;
+              const inCopyMode = mode === 'desktop' && copyLinkMode;
+
               return (
                 <button
                   key={episodeNumber}
                   tabIndex={0}
                   data-tv-focusable='true'
-                  onClick={() => handleEpisodeClick(episodeNumber - 1)}
-                  className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 
+                  onClick={() => handleEpisodeBtnClick(episodeNumber)}
+                  onContextMenu={(e) =>
+                    handleEpisodeBtnContextMenu(episodeNumber, e)
+                  }
+                  title={
+                    mode === 'desktop'
+                      ? inCopyMode
+                        ? `點擊複製第 ${episodeNumber} 集 M3U8 鏈接`
+                        : `點擊播放（滑鼠右鍵可直接複製第 ${episodeNumber} 集 M3U8 鏈接）`
+                      : undefined
+                  }
+                  className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 relative
                     ${
-                      isActive
+                      isCopied
+                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400 scale-105'
+                        : inCopyMode
+                        ? isActive
+                          ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-400'
+                          : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-white hover:scale-105'
+                        : isActive
                         ? 'bg-green-500 text-white shadow-lg shadow-green-500/25 dark:bg-green-600'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:scale-105 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20'
                     }`.trim()}
                 >
-                  {episodeNumber}
+                  {isCopied ? (
+                    <Check className='w-4 h-4 stroke-[3]' />
+                  ) : (
+                    episodeNumber
+                  )}
                 </button>
               );
             })}
           </div>
         </>
+      )}
+
+      {/* 複製成功懸浮提示 Toast */}
+      {copyFeedback && (
+        <div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-3.5 py-2 rounded-lg bg-gray-900/95 dark:bg-gray-100/95 text-white dark:text-gray-900 text-xs font-semibold shadow-2xl backdrop-blur-md flex items-center gap-2 border border-white/15 dark:border-black/15 animate-in fade-in zoom-in-95 duration-150 pointer-events-none'>
+          <Check className='w-4 h-4 text-emerald-400 dark:text-emerald-600 stroke-[3]' />
+          <span>{copyFeedback}</span>
+        </div>
       )}
 
       {/* 换源 Tab 内容 */}
