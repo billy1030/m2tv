@@ -561,10 +561,10 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                         : `點擊播放（滑鼠右鍵可直接複製第 ${episodeNumber} 集 M3U8 鏈接）`
                       : undefined
                   }
-                  className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-200 relative
+                  className={`h-10 flex items-center justify-center text-sm font-medium rounded-md transition-all duration-300 relative select-none active:scale-90
                     ${
                       isCopied
-                        ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400 scale-105'
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400 scale-110 animate-in zoom-in-75'
                         : inCopyMode
                         ? isActive
                           ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-400'
@@ -575,7 +575,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                     }`.trim()}
                 >
                   {isCopied ? (
-                    <Check className='w-4 h-4 stroke-[3]' />
+                    <Check className='w-4 h-4 stroke-[3] animate-in zoom-in-50 spin-in-45 duration-200' />
                   ) : (
                     episodeNumber
                   )}
@@ -588,8 +588,8 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
 
       {/* 複製成功懸浮提示 Toast */}
       {copyFeedback && (
-        <div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-3.5 py-2 rounded-lg bg-gray-900/95 dark:bg-gray-100/95 text-white dark:text-gray-900 text-xs font-semibold shadow-2xl backdrop-blur-md flex items-center gap-2 border border-white/15 dark:border-black/15 animate-in fade-in zoom-in-95 duration-150 pointer-events-none'>
-          <Check className='w-4 h-4 text-emerald-400 dark:text-emerald-600 stroke-[3]' />
+        <div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-lg bg-gray-900/95 dark:bg-gray-100/95 text-white dark:text-gray-900 text-xs font-semibold shadow-2xl backdrop-blur-md flex items-center gap-2 border border-white/15 dark:border-black/15 animate-in fade-in zoom-in-95 duration-200 pointer-events-none'>
+          <Check className='w-4 h-4 text-emerald-400 dark:text-emerald-600 stroke-[3] animate-in zoom-in-50 spin-in-45 duration-200' />
           <span>{copyFeedback}</span>
         </div>
       )}

@@ -164,15 +164,37 @@ function PlayPageClient() {
   const [copiedAllEpisodes, setCopiedAllEpisodes] = useState(false);
 
   const handleCopyM3u8 = async () => {
-    const currentUrl =
-      artPlayerRef.current?.url || artPlayerRef.current?.switch || videoUrl;
-    if (!currentUrl) return;
-    const ok = await copyToClipboard(currentUrl);
+    // 提取真实的 M3U8 播放链接，绝不复制网站自身的页面链接
+    let m3u8Url = '';
+    if (typeof videoUrl === 'string' && videoUrl.trim()) {
+      m3u8Url = videoUrl.trim();
+    } else if (
+      detail?.episodes &&
+      typeof detail.episodes[currentEpisodeIndex] === 'string'
+    ) {
+      m3u8Url = detail.episodes[currentEpisodeIndex].trim();
+    } else if (
+      artPlayerRef.current?.option?.url &&
+      typeof artPlayerRef.current.option.url === 'string'
+    ) {
+      m3u8Url = artPlayerRef.current.option.url.trim();
+    }
+
+    if (!m3u8Url) {
+      if (artPlayerRef.current?.notice) {
+        artPlayerRef.current.notice.show = '尚未獲取到有效 M3U8 視頻鏈接';
+      }
+      return;
+    }
+
+    const ok = await copyToClipboard(m3u8Url);
     if (ok) {
       setCopiedCurrentEpisode(true);
       setTimeout(() => setCopiedCurrentEpisode(false), 2000);
       if (artPlayerRef.current?.notice) {
-        artPlayerRef.current.notice.show = '已複製實際視頻鏈接 (M3U8)！';
+        artPlayerRef.current.notice.show = `✓ 已複製第 ${
+          currentEpisodeIndex + 1
+        } 集 M3U8 視頻鏈接！`;
       }
     }
   };
@@ -189,7 +211,7 @@ function PlayPageClient() {
       setCopiedAllEpisodes(true);
       setTimeout(() => setCopiedAllEpisodes(false), 2200);
       if (artPlayerRef.current?.notice) {
-        artPlayerRef.current.notice.show = `已複製全劇共 ${epList.length} 集鏈接！`;
+        artPlayerRef.current.notice.show = `✓ 已複製全劇共 ${epList.length} 集 M3U8 鏈接！`;
       }
     }
   };
@@ -1545,10 +1567,24 @@ function PlayPageClient() {
           {
             position: 'right',
             index: 10,
-            html: '<i class="art-icon flex" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></i>',
-            tooltip: '複製視頻鏈接 (M3U8)',
-            click: function () {
+            html: '<i class="art-icon flex" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></i>',
+            tooltip: '複製 M3U8 視頻鏈接',
+            click: function ($control: any) {
               handleCopyM3u8();
+              if ($control) {
+                const originalHtml = $control.innerHTML;
+                $control.style.transition =
+                  'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                $control.style.transform = 'scale(1.4)';
+                $control.innerHTML =
+                  '<i class="art-icon flex" style="display:inline-flex;align-items:center;justify-content:center;color:#22c55e;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></i>';
+                setTimeout(() => {
+                  $control.style.transform = 'scale(1)';
+                }, 250);
+                setTimeout(() => {
+                  $control.innerHTML = originalHtml;
+                }, 1800);
+              }
             },
           },
         ],
@@ -1984,29 +2020,32 @@ function PlayPageClient() {
               </button>
 
               {/* 複製目前集數真實播放鏈接 (方便 Mac 用戶左鍵一按即抄) */}
-              {videoUrl && (
+              {(videoUrl ||
+                (detail?.episodes && detail.episodes.length > 0)) && (
                 <button
                   type='button'
                   onClick={handleCopyM3u8}
-                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-semibold shadow-sm transition-all duration-300 cursor-pointer select-none active:scale-90 ${
                     copiedCurrentEpisode
-                      ? 'bg-emerald-600 text-white shadow-emerald-500/25 scale-105'
-                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 hover:scale-105 active:scale-95'
+                      ? 'bg-emerald-600 text-white shadow-emerald-500/30 scale-105 ring-2 ring-emerald-400 animate-in zoom-in-95'
+                      : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 hover:scale-105'
                   }`}
-                  title='點擊直接複製目前播放集數之真實視頻鏈接 (M3U8)'
+                  title='點擊直接複製目前播放集數之真實 M3U8 視頻鏈接'
                 >
                   {copiedCurrentEpisode ? (
                     <>
-                      <Check className='w-3.5 h-3.5 stroke-[3]' />
-                      <span>已複製第 {currentEpisodeIndex + 1} 集！</span>
+                      <Check className='w-3.5 h-3.5 stroke-[3] animate-in zoom-in-50 spin-in-45 duration-200' />
+                      <span className='animate-in fade-in duration-200'>
+                        已複製 M3U8！
+                      </span>
                     </>
                   ) : (
                     <>
                       <Copy className='w-3.5 h-3.5' />
                       <span>
                         {totalEpisodes > 1
-                          ? `複製第 ${currentEpisodeIndex + 1} 集`
-                          : '複製播放鏈接'}
+                          ? `複製第 ${currentEpisodeIndex + 1} 集 M3U8`
+                          : '複製 M3U8'}
                       </span>
                     </>
                   )}
@@ -2020,22 +2059,24 @@ function PlayPageClient() {
                   <button
                     type='button'
                     onClick={handleCopyAllEpisodes}
-                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border shadow-sm transition-all duration-200 cursor-pointer ${
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-full text-xs font-medium border shadow-sm transition-all duration-300 cursor-pointer select-none active:scale-90 ${
                       copiedAllEpisodes
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300'
-                        : 'bg-white/80 hover:bg-white text-gray-700 hover:text-amber-600 dark:bg-gray-800/80 dark:hover:bg-gray-800 dark:text-gray-300 border-gray-200/70 dark:border-gray-700/70'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-500/25 scale-105 ring-2 ring-emerald-400 animate-in zoom-in-95'
+                        : 'bg-white/80 hover:bg-white text-gray-700 hover:text-amber-600 dark:bg-gray-800/80 dark:hover:bg-gray-800 dark:text-gray-300 border-gray-200/70 dark:border-gray-700/70 hover:scale-105'
                     }`}
-                    title={`一鍵複製全劇共 ${detail.episodes.length} 集真實播放鏈接`}
+                    title={`一鍵複製全劇共 ${detail.episodes.length} 集真實 M3U8 播放鏈接`}
                   >
                     {copiedAllEpisodes ? (
                       <>
-                        <Check className='w-3 h-3 stroke-[2.5] text-emerald-600' />
-                        <span>全劇已複製！</span>
+                        <Check className='w-3 h-3 stroke-[3] text-white animate-in zoom-in-50 spin-in-45 duration-200' />
+                        <span className='animate-in fade-in duration-200'>
+                          全劇已複製！
+                        </span>
                       </>
                     ) : (
                       <>
                         <Copy className='w-3 h-3 text-gray-500 dark:text-gray-400' />
-                        <span>複製全劇 ({detail.episodes.length}集)</span>
+                        <span>複製全劇 M3U8 ({detail.episodes.length}集)</span>
                       </>
                     )}
                   </button>

@@ -71,6 +71,7 @@ export default function VideoCard({
   const isTv = mode === 'tv';
   const [favorited, setFavorited] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -254,6 +255,7 @@ export default function VideoCard({
       }
 
       setCopied(false);
+      setCopying(true);
 
       // 1. 如果已有聚合/现有 episodes 数据，直接提取第一集 m3u8
       let targetM3u8 = '';
@@ -309,29 +311,18 @@ export default function VideoCard({
         }
       }
 
-      // 4. 兜底：如果所有资源源均未收录该视频，才复制播放页面链接
-      const textToCopy =
-        targetM3u8 ||
-        (typeof window !== 'undefined' && playRelativeUrl
-          ? `${window.location.origin}${playRelativeUrl}`
-          : playRelativeUrl);
+      setCopying(false);
 
-      if (!textToCopy) return;
+      // 只複製真實視頻串流 M3U8 鏈接，絕不複製網站自身頁面鏈接
+      if (!targetM3u8) return;
 
-      const ok = await copyTextToClipboard(textToCopy);
+      const ok = await copyTextToClipboard(targetM3u8);
       if (ok) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }
     },
-    [
-      actualId,
-      actualSource,
-      actualTitle,
-      actualYear,
-      aggregateData,
-      playRelativeUrl,
-    ]
+    [actualId, actualSource, actualTitle, actualYear, aggregateData]
   );
 
   const handleClick = useCallback(() => {
@@ -501,38 +492,56 @@ export default function VideoCard({
         )}
 
         {/* 複製連結按鈕 / 徽章（僅電腦模式且開啟複製模式或已複製時顯示） */}
-        {mode === 'desktop' && playRelativeUrl && (copyLinkMode || copied) && (
-          <button
-            type='button'
-            onClick={handleCopyLink}
-            title={
-              copied
-                ? '已複製真實 M3U8 鏈接！'
-                : actualEpisodes && actualEpisodes > 1
-                ? '點擊複製第 1 集真實視頻鏈接 (M3U8)'
-                : '點擊複製真實視頻鏈接 (M3U8)'
-            }
-            className={`absolute top-2 left-2 z-20 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold shadow-lg transition-all duration-200 animate-in fade-in zoom-in-95 ${
-              copied
-                ? 'bg-emerald-600 text-white scale-105'
-                : 'bg-amber-500 hover:bg-amber-600 text-white hover:scale-105 active:scale-95'
-            }`}
-          >
-            {copied ? (
-              <>
-                <Check size={13} className='stroke-[2.5]' />
-                <span>已複製</span>
-              </>
-            ) : (
-              <>
-                <Copy size={13} className='stroke-[2.5]' />
-                <span>
-                  {actualEpisodes && actualEpisodes > 1 ? '複製第1集' : '複製'}
-                </span>
-              </>
-            )}
-          </button>
-        )}
+        {mode === 'desktop' &&
+          playRelativeUrl &&
+          (copyLinkMode || copied || copying) && (
+            <button
+              type='button'
+              onClick={handleCopyLink}
+              title={
+                copied
+                  ? '已複製真實 M3U8 鏈接！'
+                  : copying
+                  ? '正在獲取真實 M3U8 鏈接...'
+                  : actualEpisodes && actualEpisodes > 1
+                  ? '點擊複製第 1 集真實視頻鏈接 (M3U8)'
+                  : '點擊複製真實視頻鏈接 (M3U8)'
+              }
+              className={`absolute top-2 left-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold shadow-lg transition-all duration-300 select-none active:scale-90 ${
+                copied
+                  ? 'bg-emerald-600 text-white scale-105 ring-2 ring-emerald-400 animate-in zoom-in-95'
+                  : copying
+                  ? 'bg-amber-600 text-white opacity-90'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white hover:scale-105'
+              }`}
+            >
+              {copied ? (
+                <>
+                  <Check
+                    size={13}
+                    className='stroke-[3] animate-in zoom-in-50 spin-in-45 duration-200'
+                  />
+                  <span className='animate-in fade-in duration-200'>
+                    已複製 M3U8
+                  </span>
+                </>
+              ) : copying ? (
+                <>
+                  <div className='w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                  <span>獲取中...</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={13} className='stroke-[2.5]' />
+                  <span>
+                    {actualEpisodes && actualEpisodes > 1
+                      ? '複製第1集 M3U8'
+                      : '複製 M3U8'}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
 
         {/* 豆瓣链接 (非複製模式下顯示) */}
         {config.showDoubanLink &&
